@@ -1,0 +1,14 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Flutter
+.dart_tool/
+.flutter-plugins
+.pub-cache/
+.vscode/
+
+# System
+.DS_Store
+Thumbs.db
