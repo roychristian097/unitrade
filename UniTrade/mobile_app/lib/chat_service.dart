@@ -13,7 +13,7 @@ class ChatService {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ${AuthService.token}',
       },
-    ).timeout(const Duration(seconds: 10));
+    ).timeout(Duration(seconds: 10));
 
     if (response.statusCode == 200) {
       return json.decode(response.body);
@@ -30,7 +30,7 @@ class ChatService {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ${AuthService.token}',
       },
-    ).timeout(const Duration(seconds: 10));
+    ).timeout(Duration(seconds: 10));
 
     if (response.statusCode == 200) {
       return json.decode(response.body);
@@ -52,7 +52,7 @@ class ChatService {
         'product_id': productId,
         'message': message,
       }),
-    ).timeout(const Duration(seconds: 10));
+    ).timeout(Duration(seconds: 10));
 
     if (response.statusCode != 200) {
       throw Exception('Failed to send message');

@@ -1,7 +1,6 @@
-import 'dart:convert'; // Huruf 'i' harus kecil
-import 'package:http/http.dart' as http; 
 import 'package:flutter/material.dart';
-import 'login_page.dart'; // Import file login
+import 'login_page.dart';
+import 'theme.dart';
 
 void main() {
   runApp(const MyApp());
@@ -12,15 +11,18 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'UniTrade App',
-      debugShowCheckedModeBanner: false, 
-      theme: ThemeData(
-        brightness: Brightness.dark, 
-      ),
-      home: const LoginPage(), // Menjadikan LoginPage sebagai halaman utama
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: ThemeManager.themeNotifier,
+      builder: (context, currentMode, child) {
+        return MaterialApp(
+          title: 'UniTrade App',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.lightTheme,
+          darkTheme: AppTheme.darkTheme,
+          themeMode: currentMode,
+          home: LoginPage(),
+        );
+      },
     );
   }
 }
-
-// File marketplace_screen.dart digunakan untuk halaman utama

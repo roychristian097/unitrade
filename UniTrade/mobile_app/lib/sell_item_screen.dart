@@ -1,3 +1,4 @@
+import 'theme.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -79,13 +80,13 @@ class _SellItemScreenState extends State<SellItemScreen> {
         request.files.add(await http.MultipartFile.fromPath('file', _imageFile!.path));
       }
 
-      final streamedResponse = await request.send().timeout(const Duration(seconds: 15));
+      final streamedResponse = await request.send().timeout(Duration(seconds: 15));
       final response = await http.Response.fromStream(streamedResponse);
 
       if (response.statusCode == 200) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Item successfully listed!'), backgroundColor: Colors.green),
+          SnackBar(content: Text('Item successfully listed!'), backgroundColor: Colors.green),
         );
         // Pop and return true to trigger refresh
         Navigator.pop(context, true);
@@ -116,15 +117,15 @@ class _SellItemScreenState extends State<SellItemScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F0F11),
+      backgroundColor: Color(0xFF0F0F11),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0F0F11),
+        backgroundColor: Color(0xFF0F0F11),
         elevation: 0,
-        title: const Text('Sell An Item', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        iconTheme: const IconThemeData(color: Colors.white),
+        title: Text('Sell An Item', style: TextStyle(color: context.colors.textPrimary, fontWeight: FontWeight.bold)),
+        iconTheme: IconThemeData(color: context.colors.textPrimary),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
+        padding: EdgeInsets.all(24.0),
         child: Form(
           key: _formKey,
           child: Column(
@@ -138,9 +139,9 @@ class _SellItemScreenState extends State<SellItemScreen> {
                     width: double.infinity,
                     height: 180,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1E1E22),
+                      color: Color(0xFF1E1E22),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.white.withOpacity(0.1), style: BorderStyle.solid),
+                      border: Border.all(color: context.colors.textPrimary.withValues(alpha: 0.1), style: BorderStyle.solid),
                       image: _imageFile != null
                           ? DecorationImage(
                               image: FileImage(_imageFile!),
@@ -153,7 +154,7 @@ class _SellItemScreenState extends State<SellItemScreen> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Icon(Icons.add_a_photo_outlined, color: Colors.grey[600], size: 40),
-                              const SizedBox(height: 8),
+                              SizedBox(height: 8),
                               Text("Tap to upload photos", style: TextStyle(color: Colors.grey[600], fontSize: 13)),
                             ],
                           )
@@ -161,7 +162,7 @@ class _SellItemScreenState extends State<SellItemScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
 
               _buildLabel("PRODUCT NAME"),
               _buildTextField(
@@ -170,7 +171,7 @@ class _SellItemScreenState extends State<SellItemScreen> {
                 validator: (val) => val!.isEmpty ? "Name is required" : null,
               ),
 
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               _buildLabel("DESCRIPTION"),
               _buildTextField(
                 controller: _descController,
@@ -179,7 +180,7 @@ class _SellItemScreenState extends State<SellItemScreen> {
                 validator: (val) => val!.isEmpty ? "Description is required" : null,
               ),
 
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               _buildLabel("PRICE (Rp)"),
               _buildTextField(
                 controller: _priceController,
@@ -189,7 +190,7 @@ class _SellItemScreenState extends State<SellItemScreen> {
                 validator: (val) => val!.isEmpty ? "Price is required" : null,
               ),
 
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               Row(
                 children: [
                   Expanded(
@@ -201,7 +202,7 @@ class _SellItemScreenState extends State<SellItemScreen> {
                       ],
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  SizedBox(width: 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -214,7 +215,7 @@ class _SellItemScreenState extends State<SellItemScreen> {
                 ],
               ),
 
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               _buildLabel("CAMPUS"),
               _buildTextField(
                 controller: _campusController,
@@ -222,19 +223,19 @@ class _SellItemScreenState extends State<SellItemScreen> {
                 validator: (val) => val!.isEmpty ? "Campus is required" : null,
               ),
 
-              const SizedBox(height: 48),
+              SizedBox(height: 48),
               SizedBox(
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _submitProduct,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFE67E22),
+                    backgroundColor: Color(0xFFE67E22),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
                   ),
                   child: _isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text("Post Listing", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                      ? CircularProgressIndicator(color: context.colors.textPrimary)
+                      : Text("Post Listing", style: TextStyle(color: context.colors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold)),
                 ),
               ),
             ],
@@ -246,8 +247,8 @@ class _SellItemScreenState extends State<SellItemScreen> {
 
   Widget _buildLabel(String text) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
-      child: Text(text, style: const TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+      padding: EdgeInsets.only(bottom: 8.0),
+      child: Text(text, style: TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
     );
   }
 
@@ -264,15 +265,15 @@ class _SellItemScreenState extends State<SellItemScreen> {
       keyboardType: isNumber ? TextInputType.number : TextInputType.text,
       maxLines: maxLines,
       inputFormatters: formatters,
-      style: const TextStyle(color: Colors.white, fontSize: 14),
+      style: TextStyle(color: context.colors.textPrimary, fontSize: 14),
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: TextStyle(color: Colors.grey[600], fontSize: 14),
         filled: true,
-        fillColor: const Color(0xFF1E1E22),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        fillColor: Color(0xFF1E1E22),
+        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-        errorStyle: const TextStyle(color: Colors.redAccent),
+        errorStyle: TextStyle(color: Colors.redAccent),
       ),
       validator: validator,
     );
@@ -280,18 +281,18 @@ class _SellItemScreenState extends State<SellItemScreen> {
 
   Widget _buildDropdown(List<String> items, String currentValue, Function(String?) onChanged) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E1E22),
+        color: Color(0xFF1E1E22),
         borderRadius: BorderRadius.circular(12),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: currentValue,
           isExpanded: true,
-          dropdownColor: const Color(0xFF1E1E22),
-          icon: const Icon(Icons.keyboard_arrow_down, color: Colors.grey),
-          style: const TextStyle(color: Colors.white, fontSize: 14),
+          dropdownColor: Color(0xFF1E1E22),
+          icon: Icon(Icons.keyboard_arrow_down, color: Colors.grey),
+          style: TextStyle(color: context.colors.textPrimary, fontSize: 14),
           onChanged: onChanged,
           items: items.map<DropdownMenuItem<String>>((String value) {
             return DropdownMenuItem<String>(

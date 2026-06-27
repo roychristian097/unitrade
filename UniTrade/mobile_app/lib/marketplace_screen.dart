@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'theme.dart';
 import 'package:http/http.dart' as http;
 import 'product_detail_screen.dart';
 import 'sell_item_screen.dart';
@@ -156,7 +157,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
 
       final uri = Uri.http('192.168.1.3:8000', '/products', queryParams);
 
-      final response = await http.get(uri).timeout(const Duration(seconds: 5));
+      final response = await http.get(uri).timeout(Duration(seconds: 5));
 
       if (response.statusCode == 200) {
         List jsonResponse = json.decode(response.body);
@@ -189,22 +190,21 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
     final bool isDesktop = MediaQuery.of(context).size.width > 800;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F0F11),
+      backgroundColor: Color(0xFF0F0F11),
       appBar: _buildAppBar(isDesktop),
-      bottomNavigationBar: isDesktop ? null : _buildBottomNavBar(),
       body: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.all(24.0),
+          padding: EdgeInsets.all(24.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (_showWelcomeMessage)
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  margin: const EdgeInsets.only(bottom: 24),
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  margin: EdgeInsets.only(bottom: 24),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: context.colors.textPrimary,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
@@ -212,7 +212,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                     children: [
                       Text(
                         "Selamat datang, $_welcomeName 😊",
-                        style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                        style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
                       ),
                       InkWell(
                         onTap: () {
@@ -220,13 +220,13 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                             _showWelcomeMessage = false;
                           });
                         },
-                        child: const Icon(Icons.close, color: Colors.black54, size: 18),
+                        child: Icon(Icons.close, color: Colors.black54, size: 18),
                       )
                     ],
                   ),
                 ),
               _buildHeaderSection(),
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
               isDesktop
                   ? Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -235,7 +235,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                           width: 280,
                           child: _buildSidebarFilters(),
                         ),
-                        const SizedBox(width: 32),
+                        SizedBox(width: 32),
                         Expanded(
                           child: _buildProductGrid(isDesktop),
                         ),
@@ -244,7 +244,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                   : Column(
                       children: [
                         _buildMobileSearchBar(),
-                        const SizedBox(height: 24),
+                        SizedBox(height: 24),
                         _buildProductGrid(isDesktop),
                       ],
                     ),
@@ -257,23 +257,23 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
 
   AppBar _buildAppBar(bool isDesktop) {
     return AppBar(
-      backgroundColor: const Color(0xFF0F0F11),
+      backgroundColor: Color(0xFF0F0F11),
       elevation: 0,
       title: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(6),
+            padding: EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: const Color(0xFFE67E22),
+              color: Color(0xFFE67E22),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Icon(Icons.trending_up, color: Colors.white, size: 16),
+            child: Icon(Icons.trending_up, color: context.colors.textPrimary, size: 16),
           ),
-          const SizedBox(width: 8),
-          const Text(
+          SizedBox(width: 8),
+          Text(
             'UniTrade',
             style: TextStyle(
-              color: Colors.white,
+              color: context.colors.textPrimary,
               fontSize: 18,
               fontWeight: FontWeight.bold,
               letterSpacing: 0.5,
@@ -284,57 +284,57 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
       actions: [
         if (isDesktop) ...[
           _buildAppBarTab("Marketplace", isActive: true, icon: Icons.storefront),
-          const SizedBox(width: 16),
+          SizedBox(width: 16),
           _buildAppBarTab("Services", icon: Icons.build_circle_outlined),
-          const SizedBox(width: 16),
+          SizedBox(width: 16),
           _buildAppBarTab("Chat", icon: Icons.chat_bubble_outline, onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => const ChatListScreen()));
+            Navigator.push(context, MaterialPageRoute(builder: (context) => ChatListScreen()));
           }),
-          const SizedBox(width: 32),
-          IconButton(icon: const Icon(Icons.light_mode_outlined, color: Colors.grey, size: 20), onPressed: () {}),
-          IconButton(icon: const Icon(Icons.favorite_border, color: Colors.grey, size: 20), onPressed: () {}),
-          IconButton(icon: const Icon(Icons.shopping_cart_outlined, color: Colors.grey, size: 20), onPressed: () {}),
+          SizedBox(width: 32),
+          IconButton(icon: Icon(Icons.light_mode_outlined, color: Colors.grey, size: 20), onPressed: () {}),
+          IconButton(icon: Icon(Icons.favorite_border, color: Colors.grey, size: 20), onPressed: () {}),
+          IconButton(icon: Icon(Icons.shopping_cart_outlined, color: Colors.grey, size: 20), onPressed: () {}),
         ] else ...[
-          IconButton(icon: const Icon(Icons.light_mode_outlined, color: Colors.grey, size: 20), onPressed: () {}),
+          IconButton(icon: Icon(Icons.light_mode_outlined, color: Colors.grey, size: 20), onPressed: () {}),
         ],
         IconButton(
-          icon: const Badge(
+          icon: Badge(
             backgroundColor: Colors.red,
             child: Icon(Icons.notifications_none, color: Colors.grey, size: 20),
           ),
           onPressed: () {},
         ),
-        if (isDesktop) const SizedBox(width: 16),
+        if (isDesktop) SizedBox(width: 16),
         if (isDesktop)
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: const Color(0xFF1E1E22),
+              color: Color(0xFF1E1E22),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white.withOpacity(0.1)),
+              border: Border.all(color: context.colors.textPrimary.withValues(alpha: 0.1)),
             ),
             child: Row(
               children: [
-                const CircleAvatar(
+                CircleAvatar(
                   radius: 12,
                   backgroundColor: Colors.grey,
-                  child: Icon(Icons.person, size: 16, color: Colors.white),
+                  child: Icon(Icons.person, size: 16, color: context.colors.textPrimary),
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(AuthService.currentUser?['name'] ?? "Guest", style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
-                    const Text("120 pts", style: TextStyle(color: Color(0xFFE67E22), fontSize: 10)),
+                    Text(AuthService.currentUser?['name'] ?? "Guest", style: TextStyle(color: context.colors.textPrimary, fontSize: 12, fontWeight: FontWeight.bold)),
+                    Text("120 pts", style: TextStyle(color: Color(0xFFE67E22), fontSize: 10)),
                   ],
                 ),
-                const SizedBox(width: 8),
-                const Icon(Icons.keyboard_arrow_down, color: Colors.grey, size: 16),
+                SizedBox(width: 8),
+                Icon(Icons.keyboard_arrow_down, color: Colors.grey, size: 16),
               ],
             ),
           ),
-        if (isDesktop) const SizedBox(width: 24),
+        if (isDesktop) SizedBox(width: 24),
       ],
     );
   }
@@ -343,19 +343,19 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
     return InkWell(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isActive ? const Color(0xFFE67E22).withOpacity(0.2) : Colors.transparent,
+          color: isActive ? Color(0xFFE67E22).withValues(alpha: 0.2) : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
           children: [
-            Icon(icon, color: isActive ? const Color(0xFFE67E22) : Colors.grey, size: 16),
-            const SizedBox(width: 6),
+            Icon(icon, color: isActive ? Color(0xFFE67E22) : Colors.grey, size: 16),
+            SizedBox(width: 6),
             Text(
               title,
               style: TextStyle(
-                color: isActive ? const Color(0xFFE67E22) : Colors.grey,
+                color: isActive ? Color(0xFFE67E22) : Colors.grey,
                 fontSize: 14,
                 fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
               ),
@@ -368,10 +368,10 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
 
   Widget _buildBottomNavBar() {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
+      padding: EdgeInsets.symmetric(vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E1E22),
-        border: Border(top: BorderSide(color: Colors.white.withOpacity(0.05))),
+        color: Color(0xFF1E1E22),
+        border: Border(top: BorderSide(color: context.colors.textPrimary.withValues(alpha: 0.05))),
       ),
       child: SafeArea(
         child: Row(
@@ -380,7 +380,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
             _buildBottomNavIcon(Icons.storefront, "Home", isActive: true),
             _buildBottomNavIcon(Icons.build_circle_outlined, "Services"),
             _buildBottomNavIcon(Icons.chat_bubble_outline, "Chat", onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => const ChatListScreen()));
+              Navigator.push(context, MaterialPageRoute(builder: (context) => ChatListScreen()));
             }),
             _buildBottomNavIcon(Icons.shopping_cart_outlined, "Cart"),
             _buildBottomNavIcon(Icons.person_outline, "Profile"),
@@ -396,12 +396,12 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: isActive ? const Color(0xFFE67E22) : Colors.grey, size: 24),
-          const SizedBox(height: 4),
+          Icon(icon, color: isActive ? Color(0xFFE67E22) : Colors.grey, size: 24),
+          SizedBox(height: 4),
           Text(
             label,
             style: TextStyle(
-              color: isActive ? const Color(0xFFE67E22) : Colors.grey,
+              color: isActive ? Color(0xFFE67E22) : Colors.grey,
               fontSize: 10,
               fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
             ),
@@ -420,11 +420,11 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 "Campus Marketplace",
-                style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
+                style: TextStyle(color: context.colors.textPrimary, fontSize: 28, fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Text(
                 "Buy and sell textbooks, electronics, and dorm gear within your university zone.",
                 style: TextStyle(color: Colors.grey[400], fontSize: 14),
@@ -436,18 +436,18 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
           onPressed: () async {
             final result = await Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const SellItemScreen()),
+              MaterialPageRoute(builder: (context) => SellItemScreen()),
             );
             if (result == true) {
               _applyFilters();
             }
           },
-          icon: const Icon(Icons.add, color: Colors.white, size: 18),
-          label: const Text("Sell An Item", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          icon: Icon(Icons.add, color: context.colors.textPrimary, size: 18),
+          label: Text("Sell An Item", style: TextStyle(color: context.colors.textPrimary, fontWeight: FontWeight.bold)),
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFFE67E22),
+            backgroundColor: Color(0xFFE67E22),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           ),
         ),
       ],
@@ -461,28 +461,28 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
           child: TextField(
             controller: _searchController,
             onSubmitted: (_) => _applyFilters(),
-            style: const TextStyle(color: Colors.white, fontSize: 13),
+            style: TextStyle(color: context.colors.textPrimary, fontSize: 13),
             decoration: InputDecoration(
               hintText: "Search for laptops, books, etc...",
               hintStyle: TextStyle(color: Colors.grey[600], fontSize: 13),
               filled: true,
-              fillColor: const Color(0xFF1E1E22),
-              prefixIcon: const Icon(Icons.search, color: Colors.grey, size: 20),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              fillColor: Color(0xFF1E1E22),
+              prefixIcon: Icon(Icons.search, color: Colors.grey, size: 20),
+              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
             ),
           ),
         ),
-        const SizedBox(width: 12),
+        SizedBox(width: 12),
         InkWell(
           onTap: _showMobileFilterSheet,
           child: Container(
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFFE67E22),
+              color: Color(0xFFE67E22),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(Icons.tune, color: Colors.white, size: 20),
+            child: Icon(Icons.tune, color: context.colors.textPrimary, size: 20),
           ),
         ),
       ],
@@ -492,9 +492,9 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
   void _showMobileFilterSheet() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF121214),
+      backgroundColor: Color(0xFF121214),
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (BuildContext context) {
@@ -520,24 +520,24 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 24),
-                    const Text("FILTERS", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24),
+                    Text("FILTERS", style: TextStyle(color: context.colors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold)),
+                    SizedBox(height: 24),
                     _buildFilterLabel("CATEGORY"),
                     _buildDropdownCategory(setModalState),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20),
                     _buildFilterLabel("CONDITION"),
                     _buildDropdownCondition(setModalState),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20),
                     _buildFilterLabel("PRICE RANGE (RP)"),
                     Row(
                       children: [
                         Expanded(child: _buildTextField("Min", _minPriceController, isNumber: true, formatters: [CurrencyInputFormatter()])),
-                        const SizedBox(width: 12),
+                        SizedBox(width: 12),
                         Expanded(child: _buildTextField("Max", _maxPriceController, isNumber: true, formatters: [CurrencyInputFormatter()])),
                       ],
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20),
                     _buildFilterLabel("CAMPUS ZONE FILTER"),
                     Row(
                       children: [
@@ -551,31 +551,31 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                               }
                             });
                           },
-                          activeColor: const Color(0xFFE67E22),
+                          activeColor: Color(0xFFE67E22),
                           checkColor: Colors.black,
                         ),
-                        const Expanded(
+                        Expanded(
                           child: Text(
                             "Include all campus at Jabodetabek area",
-                            style: TextStyle(color: Colors.white, fontSize: 13),
+                            style: TextStyle(color: context.colors.textPrimary, fontSize: 13),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      padding: EdgeInsets.symmetric(horizontal: 12),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1E1E22),
+                        color: Color(0xFF1E1E22),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<String>(
                           value: _selectedJabodetabekCampus,
                           isExpanded: true,
-                          dropdownColor: const Color(0xFF1E1E22),
-                          icon: const Icon(Icons.keyboard_arrow_down, color: Colors.grey, size: 16),
-                          style: const TextStyle(color: Colors.white, fontSize: 12),
+                          dropdownColor: Color(0xFF1E1E22),
+                          icon: Icon(Icons.keyboard_arrow_down, color: Colors.grey, size: 16),
+                          style: TextStyle(color: context.colors.textPrimary, fontSize: 12),
                           onChanged: (String? newValue) {
                             setModalState(() {
                               _selectedJabodetabekCampus = newValue!;
@@ -595,7 +595,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 32),
+                    SizedBox(height: 32),
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
@@ -604,14 +604,14 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                           _applyFilters();
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFE67E22),
+                          backgroundColor: Color(0xFFE67E22),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          padding: EdgeInsets.symmetric(vertical: 16),
                         ),
-                        child: const Text("Apply Filters", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        child: Text("Apply Filters", style: TextStyle(color: context.colors.textPrimary, fontWeight: FontWeight.bold)),
                       ),
                     ),
-                    const SizedBox(height: 32),
+                    SizedBox(height: 32),
                   ],
                 ),
               ),
@@ -624,41 +624,41 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
 
   Widget _buildSidebarFilters() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF121214),
+        color: Color(0xFF121214),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(color: context.colors.textPrimary.withValues(alpha: 0.05)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            children: const [
-              Icon(Icons.filter_list, color: Colors.white, size: 18),
+            children: [
+              Icon(Icons.filter_list, color: context.colors.textPrimary, size: 18),
               SizedBox(width: 8),
-              Text("SEARCH FILTERS", style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+              Text("SEARCH FILTERS", style: TextStyle(color: context.colors.textPrimary, fontSize: 14, fontWeight: FontWeight.bold)),
             ],
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: 24),
           _buildFilterLabel("KEYWORDS"),
           _buildTextField("Search...", _searchController),
-          const SizedBox(height: 20),
+          SizedBox(height: 20),
           _buildFilterLabel("CATEGORY"),
           _buildDropdownCategory(),
-          const SizedBox(height: 20),
+          SizedBox(height: 20),
           _buildFilterLabel("CONDITION"),
           _buildDropdownCondition(),
-          const SizedBox(height: 20),
+          SizedBox(height: 20),
           _buildFilterLabel("PRICE RANGE (RP)"),
           Row(
             children: [
               Expanded(child: _buildTextField("Min", _minPriceController, isNumber: true, formatters: [CurrencyInputFormatter()])),
-              const SizedBox(width: 12),
+              SizedBox(width: 12),
               Expanded(child: _buildTextField("Max", _maxPriceController, isNumber: true, formatters: [CurrencyInputFormatter()])),
             ],
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: 20),
           _buildFilterLabel("CAMPUS ZONE FILTER"),
           Row(
             children: [
@@ -672,31 +672,31 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                     }
                   });
                 },
-                activeColor: const Color(0xFFE67E22),
+                activeColor: Color(0xFFE67E22),
                 checkColor: Colors.black,
               ),
-              const Expanded(
+              Expanded(
                 child: Text(
                   "Include all campus at Jabodetabek area",
-                  style: TextStyle(color: Colors.white, fontSize: 13),
+                  style: TextStyle(color: context.colors.textPrimary, fontSize: 13),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
+            padding: EdgeInsets.symmetric(horizontal: 12),
             decoration: BoxDecoration(
-              color: const Color(0xFF1E1E22),
+              color: Color(0xFF1E1E22),
               borderRadius: BorderRadius.circular(8),
             ),
             child: DropdownButtonHideUnderline(
               child: DropdownButton<String>(
                 value: _selectedJabodetabekCampus,
                 isExpanded: true,
-                dropdownColor: const Color(0xFF1E1E22),
-                icon: const Icon(Icons.keyboard_arrow_down, color: Colors.grey, size: 16),
-                style: const TextStyle(color: Colors.white, fontSize: 12),
+                dropdownColor: Color(0xFF1E1E22),
+                icon: Icon(Icons.keyboard_arrow_down, color: Colors.grey, size: 16),
+                style: TextStyle(color: context.colors.textPrimary, fontSize: 12),
                 onChanged: (String? newValue) {
                   setState(() {
                     _selectedJabodetabekCampus = newValue!;
@@ -716,7 +716,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: 24),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
@@ -725,9 +725,9 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                 backgroundColor: Colors.white,
                 foregroundColor: Colors.black,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                padding: const EdgeInsets.symmetric(vertical: 14),
+                padding: EdgeInsets.symmetric(vertical: 14),
               ),
-              child: const Text("Apply Filters", style: TextStyle(fontWeight: FontWeight.bold)),
+              child: Text("Apply Filters", style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           )
         ],
@@ -737,8 +737,8 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
 
   Widget _buildFilterLabel(String text) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
-      child: Text(text, style: const TextStyle(color: Colors.grey, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+      padding: EdgeInsets.only(bottom: 8.0),
+      child: Text(text, style: TextStyle(color: Colors.grey, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
     );
   }
 
@@ -747,13 +747,13 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
       controller: controller,
       keyboardType: isNumber ? TextInputType.number : TextInputType.text,
       inputFormatters: formatters,
-      style: const TextStyle(color: Colors.white, fontSize: 13),
+      style: TextStyle(color: context.colors.textPrimary, fontSize: 13),
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: TextStyle(color: Colors.grey[600], fontSize: 13),
         filled: true,
-        fillColor: const Color(0xFF1E1E22),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        fillColor: Color(0xFF1E1E22),
+        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
       ),
     );
@@ -761,18 +761,18 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
 
   Widget _buildDropdownCategory([StateSetter? setModalState]) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      padding: EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E1E22),
+        color: Color(0xFF1E1E22),
         borderRadius: BorderRadius.circular(8),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: _selectedCategory,
           isExpanded: true,
-          dropdownColor: const Color(0xFF1E1E22),
-          icon: const Icon(Icons.keyboard_arrow_down, color: Colors.grey, size: 16),
-          style: const TextStyle(color: Colors.white, fontSize: 13),
+          dropdownColor: Color(0xFF1E1E22),
+          icon: Icon(Icons.keyboard_arrow_down, color: Colors.grey, size: 16),
+          style: TextStyle(color: context.colors.textPrimary, fontSize: 13),
           onChanged: (String? newValue) {
             if (setModalState != null) {
               setModalState(() {
@@ -797,18 +797,18 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
 
   Widget _buildDropdownCondition([StateSetter? setModalState]) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      padding: EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E1E22),
+        color: Color(0xFF1E1E22),
         borderRadius: BorderRadius.circular(8),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: _selectedCondition,
           isExpanded: true,
-          dropdownColor: const Color(0xFF1E1E22),
-          icon: const Icon(Icons.keyboard_arrow_down, color: Colors.grey, size: 16),
-          style: const TextStyle(color: Colors.white, fontSize: 13),
+          dropdownColor: Color(0xFF1E1E22),
+          icon: Icon(Icons.keyboard_arrow_down, color: Colors.grey, size: 16),
+          style: TextStyle(color: context.colors.textPrimary, fontSize: 13),
           onChanged: (String? newValue) {
             if (setModalState != null) {
               setModalState(() {
@@ -836,15 +836,15 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
       future: _productsFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator(color: Color(0xFFE67E22)));
+          return Center(child: CircularProgressIndicator(color: Color(0xFFE67E22)));
         } else if (snapshot.hasError) {
-          return Center(child: Text("Error: ${snapshot.error}", style: const TextStyle(color: Colors.red)));
+          return Center(child: Text("Error: ${snapshot.error}", style: TextStyle(color: Colors.red)));
         }
 
         final products = snapshot.data ?? [];
 
         if (products.isEmpty) {
-          return const Center(
+          return Center(
             child: Padding(
               padding: EdgeInsets.all(32.0),
               child: Text(
@@ -858,7 +858,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
 
         return GridView.builder(
           shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
+          physics: NeverScrollableScrollPhysics(),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: isDesktop ? 3 : 1, // 3 kolom di desktop, 1 di HP
             crossAxisSpacing: 20,
@@ -887,13 +887,10 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
           ),
         );
       },
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        decoration: BoxDecoration(
-          color: const Color(0xFF1E1E22),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withOpacity(0.05)),
-        ),
+      borderRadius: BorderRadius.circular(AppTheme.radiusCard),
+      child: GlassContainer(
+        padding: EdgeInsets.all(0), // No padding for the outer container so image fits
+        borderRadius: AppTheme.radiusCard,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -901,9 +898,8 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
             Expanded(
               flex: 4,
               child: Container(
-                decoration: const BoxDecoration(
-                  color: Color(0xFF2A2A2E),
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(AppTheme.radiusCard)),
                 ),
                 child: Stack(
                   fit: StackFit.expand,
@@ -924,16 +920,16 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                       top: 12,
                       left: 12,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.6),
+                          color: Colors.black.withValues(alpha: 0.6),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.location_on, color: Color(0xFFE67E22), size: 10),
-                            const SizedBox(width: 4),
-                            Text(product.campus, style: const TextStyle(color: Colors.white, fontSize: 9)),
+                            Icon(Icons.location_on, color: Color(0xFFE67E22), size: 10),
+                            SizedBox(width: 4),
+                            Text(product.campus, style: TextStyle(color: context.colors.textPrimary, fontSize: 9)),
                           ],
                         ),
                       ),
@@ -946,47 +942,47 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
             Expanded(
               flex: 5,
               child: Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: EdgeInsets.all(16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(tag1, style: const TextStyle(color: Color(0xFFE67E22), fontSize: 10, fontWeight: FontWeight.bold)),
+                        Text(tag1, style: TextStyle(color: Color(0xFFE67E22), fontSize: 10, fontWeight: FontWeight.bold)),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
                             color: Colors.grey[800],
                             borderRadius: BorderRadius.circular(4),
                           ),
-                          child: Text(tag2, style: const TextStyle(color: Colors.white, fontSize: 9)),
+                          child: Text(tag2, style: TextStyle(color: context.colors.textPrimary, fontSize: 9)),
                         )
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     Text(
                       product.name,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                      style: TextStyle(color: context.colors.textPrimary, fontSize: 14, fontWeight: FontWeight.bold),
                     ),
-                    const SizedBox(height: 6),
+                    SizedBox(height: 6),
                     Text(
                       product.description,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(color: Colors.grey[500], fontSize: 11),
                     ),
-                    const Spacer(),
+                    Spacer(),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
                           "Rp ${formatCurrency(product.price)}",
-                          style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                          style: TextStyle(color: context.colors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold),
                         ),
-                        const Text(
+                        Text(
                           "View details ->",
                           style: TextStyle(color: Color(0xFFE67E22), fontSize: 12, fontWeight: FontWeight.w500),
                         ),
