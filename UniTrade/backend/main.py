@@ -181,6 +181,19 @@ async def login(request: LoginRequest):
     else:
         raise HTTPException(status_code=401, detail="Email atau password salah")
 
+@app.get("/campuses")
+async def get_campuses():
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT campus FROM users WHERE campus IS NOT NULL AND campus != ''
+        UNION
+        SELECT campus FROM products WHERE campus IS NOT NULL AND campus != ''
+    ''')
+    campuses = [row[0] for row in cursor.fetchall()]
+    conn.close()
+    return campuses
+
 @app.get("/products")
 async def get_products(
     q: Optional[str] = None,
@@ -282,6 +295,54 @@ async def create_product(
     new_id = cursor.lastrowid
     conn.close()
     return {"message": "Product created successfully", "id": new_id, "image_url": image_url}
+
+@app.put("/products/{product_id}")
+async def update_product(
+    product_id: int,
+    request: Request,
+    name: str = Form(...),
+    description: str = Form(...),
+    price: int = Form(...),
+    category: str = Form(...),
+    condition: str = Form(...),
+    campus: str = Form(...),
+    tags: str = Form(...),
+    file: Optional[UploadFile] = File(None)
+):
+    current_user = get_current_user(request)
+    
+    conn = sqlite3.connect(DB_FILE)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    
+    # Check if product exists and user is owner
+    cursor.execute("SELECT * FROM products WHERE id = ?", (product_id,))
+    product = cursor.fetchone()
+    
+    if not product:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Product not found")
+        
+    if product["seller_id"] != current_user["user_id"]:
+        conn.close()
+        raise HTTPException(status_code=403, detail="Not authorized to edit this product")
+
+    image_url = product["image_url"]
+    if file and file.filename:
+        file_path = f"uploads/{file.filename}"
+        with open(file_path, "wb") as f:
+            f.write(await file.read())
+        image_url = f"/uploads/{file.filename}"
+        
+    cursor.execute('''
+        UPDATE products 
+        SET name = ?, description = ?, price = ?, category = ?, condition = ?, campus = ?, tags = ?, image_url = ?
+        WHERE id = ?
+    ''', (name, description, price, category, condition, campus, tags, image_url, product_id))
+    
+    conn.commit()
+    conn.close()
+    return {"message": "Product updated successfully", "id": product_id, "image_url": image_url}
 
 @app.post("/messages")
 async def send_message(request: Request, msg: MessageCreate):
