@@ -70,7 +70,11 @@ def init_db():
             name TEXT,
             email TEXT UNIQUE,
             password_hash TEXT,
-            campus TEXT
+            campus TEXT,
+            points INTEGER DEFAULT 0,
+            role TEXT DEFAULT 'STUDENT',
+            verification_status TEXT DEFAULT 'PENDING',
+            student_id TEXT
         )
     ''')
     cursor.execute('''
@@ -86,6 +90,54 @@ def init_db():
             tags TEXT,
             image_url TEXT,
             FOREIGN KEY(seller_id) REFERENCES users(id)
+        )
+    ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS services (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            seller_id INTEGER,
+            title TEXT,
+            description TEXT,
+            category TEXT,
+            price INTEGER,
+            image_url TEXT,
+            FOREIGN KEY(seller_id) REFERENCES users(id)
+        )
+    ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS orders (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            buyer_id INTEGER,
+            total_amount INTEGER,
+            status TEXT DEFAULT 'PENDING',
+            payment_method TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(buyer_id) REFERENCES users(id)
+        )
+    ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS wishlists (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            product_id INTEGER,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(user_id) REFERENCES users(id),
+            FOREIGN KEY(product_id) REFERENCES products(id),
+            UNIQUE(user_id, product_id)
+        )
+    ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS reviews (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            reviewer_id INTEGER,
+            product_id INTEGER,
+            service_id INTEGER,
+            rating INTEGER,
+            comment TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(reviewer_id) REFERENCES users(id),
+            FOREIGN KEY(product_id) REFERENCES products(id),
+            FOREIGN KEY(service_id) REFERENCES services(id)
         )
     ''')
     cursor.execute('''
@@ -105,19 +157,22 @@ def init_db():
     # Check if empty to seed data
     cursor.execute("SELECT COUNT(*) FROM users")
     if cursor.fetchone()[0] == 0:
-        # Seed a dummy user
-        cursor.execute("INSERT INTO users (name, email, password_hash, campus) VALUES (?, ?, ?, ?)", 
-            ("Tester Student", "tester@student.ac.id", hash_password("123456"), "Universitas Nasional - Jakarta Selatan, Pasar Minggu"))
+        cursor.execute("INSERT INTO users (name, email, password_hash, campus, points, verification_status) VALUES (?, ?, ?, ?, ?, ?)", 
+            ("Tester Student", "tester@student.ac.id", hash_password("123456"), "Universitas Nasional - Jakarta Selatan, Pasar Minggu", 100, "APPROVED"))
         user_id = cursor.lastrowid
         
         dummy_products = [
             (user_id, "MacBook Pro M1 2020 8/256GB", "Lancar jaya untuk ngoding, lecet pemakaian sedikit.", 12000000, "Elektronik", "Pemakaian Wajar (Fair/Used)", "Universitas Nasional - Jakarta Selatan, Pasar Minggu", json.dumps(["DORM ESSENTIALS", "GOOD"]), ""),
             (user_id, "Sony WH-1000XM4 Headphones", "Headphones over-ear Active Noise Cancelling terbaik. Kondisi istimewa, lengkap dengan kotak.", 2700000, "Elektronik", "Mulus (Like New)", "Universitas Nasional - Jakarta Selatan, Pasar Minggu", json.dumps(["PHONES", "LIKE NEW"]), ""),
-            (user_id, "Jaket Hoodie Teknik Sipil 2023", "Hoodie tebal warna biru dongker. Belum pernah dipakai.", 150000, "Pakaian", "Baru (Brand New)", "Universitas Indonesia - Depok, Beji", json.dumps(["CLOTHING", "NEW"]), ""),
-            (user_id, "Jasa Rakit PC / Install Ulang Laptop", "Menerima jasa rakit PC rapi, install Windows, Linux, dan aplikasi desain/arsitektur. Pengerjaan 1 hari.", 100000, "Jasa", "Semua Kondisi", "Universitas Nasional - Jakarta Selatan, Pasar Minggu", json.dumps(["SERVICES", "FAST"]), ""),
-            (user_id, "Kalkulator Scientific Casio fx-991EX", "Cocok untuk mahasiswa teknik. Tombol masih empuk semua, fungsi normal.", 250000, "Elektronik", "Mulus (Like New)", "Universitas Gunadarma - Depok, Margonda", json.dumps(["STUDY", "LIKE NEW"]), "")
+            (user_id, "Jaket Hoodie Teknik Sipil 2023", "Hoodie tebal warna biru dongker. Belum pernah dipakai.", 150000, "Pakaian", "Baru (Brand New)", "Universitas Indonesia - Depok, Beji", json.dumps(["CLOTHING", "NEW"]), "")
         ]
         cursor.executemany("INSERT INTO products (seller_id, name, description, price, category, condition, campus, tags, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", dummy_products)
+        
+        dummy_services = [
+            (user_id, "Jasa Rakit PC / Install Ulang Laptop", "Menerima jasa rakit PC rapi, install Windows, Linux.", "IT Support", 100000, ""),
+            (user_id, "Jasa Desain Poster / UI UX", "Bisa desain pakai Figma atau Canva.", "Desain", 50000, "")
+        ]
+        cursor.executemany("INSERT INTO services (seller_id, title, description, category, price, image_url) VALUES (?, ?, ?, ?, ?, ?)", dummy_services)
         conn.commit()
     conn.close()
 
@@ -398,3 +453,61 @@ async def get_chat_history(request: Request, other_user_id: int, product_id: int
     messages = [dict(row) for row in cursor.fetchall()]
     conn.close()
     return messages
+# NEW ENDPOINTS ADDED FOR WEB MIGRATION
+class ServiceCreate(BaseModel):
+    title: str
+    description: str
+    category: str
+    price: int
+
+@app.get("/services")
+async def get_services(request: Request):
+    conn = sqlite3.connect(DB_FILE)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT s.*, u.name as seller_name, u.campus as seller_campus 
+        FROM services s JOIN users u ON s.seller_id = u.id ORDER BY s.id DESC
+    """)
+    services = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    return services
+
+@app.post("/services")
+async def create_service(request: Request, svc: ServiceCreate):
+    current_user = get_current_user(request)
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO services (seller_id, title, description, category, price, image_url) VALUES (?, ?, ?, ?, ?, ?)",
+        (current_user["user_id"], svc.title, svc.description, svc.category, svc.price, ""))
+    conn.commit()
+    conn.close()
+    return {"message": "Service created successfully"}
+
+class OrderCreate(BaseModel):
+    total_amount: int
+    payment_method: str
+
+@app.post("/checkout")
+async def checkout(request: Request, order: OrderCreate):
+    current_user = get_current_user(request)
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO orders (buyer_id, total_amount, payment_method) VALUES (?, ?, ?)",
+        (current_user["user_id"], order.total_amount, order.payment_method))
+    conn.commit()
+    conn.close()
+    return {"message": "Order created successfully"}
+
+@app.get("/user/profile")
+async def user_profile(request: Request):
+    current_user = get_current_user(request)
+    conn = sqlite3.connect(DB_FILE)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, name, email, campus, points, role, verification_status FROM users WHERE id = ?", (current_user["user_id"],))
+    user = cursor.fetchone()
+    conn.close()
+    if user:
+        return dict(user)
+    raise HTTPException(status_code=404, detail="User not found")
