@@ -54,7 +54,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     final bool isDesktop = MediaQuery.of(context).size.width > 800;
 
     return Scaffold(
-      backgroundColor: Color(0xFF0F0F11),
+      backgroundColor: context.colors.background,
       appBar: _buildAppBar(isDesktop),
       bottomNavigationBar: isDesktop ? null : _buildBottomNavBar(),
       body: SingleChildScrollView(
@@ -137,18 +137,18 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 'http://192.168.1.3:8000${widget.product.imageUrl}',
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) =>
-                    Center(child: Icon(Icons.image_outlined, color: Colors.grey[700], size: 80)),
+                    Center(child: Icon(Icons.image_outlined, color: context.colors.border, size: 80)),
               ),
             )
           else
-            Center(child: Icon(Icons.image_outlined, color: Colors.grey[700], size: 80)),
+            Center(child: Icon(Icons.image_outlined, color: context.colors.border, size: 80)),
           Positioned(
             top: 16,
             left: 16,
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: Color(0xFFE67E22),
+                color: context.colors.primary,
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
@@ -171,7 +171,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(tag, style: TextStyle(color: Color(0xFFE67E22), fontSize: 12, fontWeight: FontWeight.bold)),
+            Text(tag, style: TextStyle(color: context.colors.primary, fontSize: 12, fontWeight: FontWeight.bold)),
             Text("Condition: ${widget.product.condition}", style: TextStyle(color: Colors.grey, fontSize: 12)),
           ],
         ),
@@ -208,7 +208,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 icon: Icon(Icons.shopping_bag_outlined, color: context.colors.textPrimary, size: 18),
                 label: Text("Buy Now", style: TextStyle(color: context.colors.textPrimary, fontWeight: FontWeight.bold)),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFFE67E22),
+                  backgroundColor: context.colors.primary,
                   padding: EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                 ),
@@ -259,7 +259,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         Container(
           padding: EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Color(0xFF1E1E22),
+            color: context.colors.cardBg,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: context.colors.textPrimary.withValues(alpha: 0.05)),
           ),
@@ -269,7 +269,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.location_on, color: Color(0xFFE67E22), size: 16),
+                  Icon(Icons.location_on, color: context.colors.primary, size: 16),
                   SizedBox(width: 8),
                   Expanded(child: Text("Handover Location: Cafeteria Lounge UNAS", style: TextStyle(color: Colors.grey[400], fontSize: 13))),
                 ],
@@ -278,7 +278,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.verified_user_outlined, color: Color(0xFFE67E22), size: 16),
+                  Icon(Icons.verified_user_outlined, color: context.colors.primary, size: 16),
                   SizedBox(width: 8),
                   Expanded(child: Text("Transaction Protection: Meet in public, inspect item before pay.", style: TextStyle(color: Colors.grey[400], fontSize: 13))),
                 ],
@@ -292,7 +292,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         Container(
           padding: EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Color(0xFF1E1E22),
+            color: context.colors.cardBg,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: context.colors.textPrimary.withValues(alpha: 0.05)),
           ),
@@ -300,7 +300,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             children: [
               CircleAvatar(
                 radius: 20,
-                backgroundColor: Color(0xFFE67E22),
+                backgroundColor: context.colors.primary,
                 child: Text(widget.product.sellerName.isNotEmpty ? widget.product.sellerName[0].toUpperCase() : "U", style: TextStyle(color: context.colors.textPrimary, fontWeight: FontWeight.bold, fontSize: 18)),
               ),
               SizedBox(width: 12),
@@ -398,7 +398,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
   Widget _buildRelatedProducts(bool isDesktop) {
     if (_isLoadingRelated) {
-      return Center(child: CircularProgressIndicator(color: Color(0xFFE67E22)));
+      return Center(child: CircularProgressIndicator(color: context.colors.primary));
     }
     if (_relatedProducts.isEmpty) {
       return Text("No related products found.", style: TextStyle(color: Colors.grey[600], fontSize: 14));
@@ -427,7 +427,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
     return Container(
       decoration: BoxDecoration(
-        color: Color(0xFF1E1E22),
+        color: context.colors.cardBg,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: context.colors.textPrimary.withValues(alpha: 0.05)),
       ),
@@ -443,7 +443,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               ),
               child: Stack(
                 children: [
-                  Center(child: Icon(Icons.image_outlined, color: Colors.grey[700], size: 50)),
+                  Center(child: Icon(Icons.image_outlined, color: context.colors.border, size: 50)),
                   Positioned(
                     top: 12,
                     left: 12,
@@ -455,7 +455,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.location_on, color: Color(0xFFE67E22), size: 10),
+                          Icon(Icons.location_on, color: context.colors.primary, size: 10),
                           SizedBox(width: 4),
                           Text(product.campus, style: TextStyle(color: context.colors.textPrimary, fontSize: 9)),
                         ],
@@ -476,11 +476,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(tag1, style: TextStyle(color: Color(0xFFE67E22), fontSize: 10, fontWeight: FontWeight.bold)),
+                      Text(tag1, style: TextStyle(color: context.colors.primary, fontSize: 10, fontWeight: FontWeight.bold)),
                       Container(
                         padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: Colors.grey[800],
+                          color: context.colors.cardBg,
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(tag2, style: TextStyle(color: context.colors.textPrimary, fontSize: 9)),
@@ -505,10 +505,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       Container(
                         padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
-                          color: Color(0xFFE67E22).withValues(alpha: 0.2),
+                          color: context.colors.primary.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Text("View", style: TextStyle(color: Color(0xFFE67E22), fontSize: 11, fontWeight: FontWeight.bold)),
+                        child: Text("View", style: TextStyle(color: context.colors.primary, fontSize: 11, fontWeight: FontWeight.bold)),
                       )
                     ],
                   )
@@ -524,14 +524,14 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   // Reuse the appbar from marketplace
   AppBar _buildAppBar(bool isDesktop) {
     return AppBar(
-      backgroundColor: Color(0xFF0F0F11),
+      backgroundColor: context.colors.background,
       elevation: 0,
       title: Row(
         children: [
           Container(
             padding: EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: Color(0xFFE67E22),
+              color: context.colors.primary,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(Icons.trending_up, color: context.colors.textPrimary, size: 16),
@@ -576,7 +576,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           Container(
             padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: Color(0xFF1E1E22),
+              color: context.colors.cardBg,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(color: context.colors.textPrimary.withValues(alpha: 0.1)),
             ),
@@ -612,17 +612,17 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isActive ? Color(0xFFE67E22).withValues(alpha: 0.2) : Colors.transparent,
+          color: isActive ? context.colors.primary.withValues(alpha: 0.2) : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
           children: [
-            Icon(icon, color: isActive ? Color(0xFFE67E22) : Colors.grey, size: 16),
+            Icon(icon, color: isActive ? context.colors.primary : Colors.grey, size: 16),
             SizedBox(width: 6),
             Text(
               title,
               style: TextStyle(
-                color: isActive ? Color(0xFFE67E22) : Colors.grey,
+                color: isActive ? context.colors.primary : Colors.grey,
                 fontSize: 14,
                 fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
               ),
@@ -637,7 +637,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     return Container(
       padding: EdgeInsets.symmetric(vertical: 12),
       decoration: BoxDecoration(
-        color: Color(0xFF1E1E22),
+        color: context.colors.cardBg,
         border: Border(top: BorderSide(color: context.colors.textPrimary.withValues(alpha: 0.05))),
       ),
       child: SafeArea(
@@ -663,12 +663,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: isActive ? Color(0xFFE67E22) : Colors.grey, size: 24),
+          Icon(icon, color: isActive ? context.colors.primary : Colors.grey, size: 24),
           SizedBox(height: 4),
           Text(
             label,
             style: TextStyle(
-              color: isActive ? Color(0xFFE67E22) : Colors.grey,
+              color: isActive ? context.colors.primary : Colors.grey,
               fontSize: 10,
               fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
             ),

@@ -89,6 +89,7 @@ def init_db():
             campus TEXT,
             tags TEXT,
             image_url TEXT,
+            approval_status TEXT DEFAULT 'PENDING',
             FOREIGN KEY(seller_id) REFERENCES users(id)
         )
     ''')
@@ -101,6 +102,7 @@ def init_db():
             category TEXT,
             price INTEGER,
             image_url TEXT,
+            approval_status TEXT DEFAULT 'PENDING',
             FOREIGN KEY(seller_id) REFERENCES users(id)
         )
     ''')
@@ -157,22 +159,25 @@ def init_db():
     # Check if empty to seed data
     cursor.execute("SELECT COUNT(*) FROM users")
     if cursor.fetchone()[0] == 0:
-        cursor.execute("INSERT INTO users (name, email, password_hash, campus, points, verification_status) VALUES (?, ?, ?, ?, ?, ?)", 
-            ("Tester Student", "tester@student.ac.id", hash_password("123456"), "Universitas Nasional - Jakarta Selatan, Pasar Minggu", 100, "APPROVED"))
+        cursor.execute("INSERT INTO users (name, email, password_hash, campus, points, verification_status, role) VALUES (?, ?, ?, ?, ?, ?, ?)", 
+            ("Admin User", "admin@unitrade.ac.id", hash_password("admin123"), "Universitas Nasional - Jakarta Selatan, Pasar Minggu", 100, "APPROVED", "ADMIN"))
+            
+        cursor.execute("INSERT INTO users (name, email, password_hash, campus, points, verification_status, role) VALUES (?, ?, ?, ?, ?, ?, ?)", 
+            ("Tester Student", "tester@student.ac.id", hash_password("123456"), "Universitas Nasional - Jakarta Selatan, Pasar Minggu", 100, "APPROVED", "STUDENT"))
         user_id = cursor.lastrowid
         
         dummy_products = [
-            (user_id, "MacBook Pro M1 2020 8/256GB", "Lancar jaya untuk ngoding, lecet pemakaian sedikit.", 12000000, "Elektronik", "Pemakaian Wajar (Fair/Used)", "Universitas Nasional - Jakarta Selatan, Pasar Minggu", json.dumps(["DORM ESSENTIALS", "GOOD"]), ""),
-            (user_id, "Sony WH-1000XM4 Headphones", "Headphones over-ear Active Noise Cancelling terbaik. Kondisi istimewa, lengkap dengan kotak.", 2700000, "Elektronik", "Mulus (Like New)", "Universitas Nasional - Jakarta Selatan, Pasar Minggu", json.dumps(["PHONES", "LIKE NEW"]), ""),
-            (user_id, "Jaket Hoodie Teknik Sipil 2023", "Hoodie tebal warna biru dongker. Belum pernah dipakai.", 150000, "Pakaian", "Baru (Brand New)", "Universitas Indonesia - Depok, Beji", json.dumps(["CLOTHING", "NEW"]), "")
+            (user_id, "MacBook Pro M1 2020 8/256GB", "Lancar jaya untuk ngoding, lecet pemakaian sedikit.", 12000000, "Elektronik", "Pemakaian Wajar (Fair/Used)", "Universitas Nasional - Jakarta Selatan, Pasar Minggu", json.dumps(["DORM ESSENTIALS", "GOOD"]), "", "APPROVED"),
+            (user_id, "Sony WH-1000XM4 Headphones", "Headphones over-ear Active Noise Cancelling terbaik. Kondisi istimewa, lengkap dengan kotak.", 2700000, "Elektronik", "Mulus (Like New)", "Universitas Nasional - Jakarta Selatan, Pasar Minggu", json.dumps(["PHONES", "LIKE NEW"]), "", "APPROVED"),
+            (user_id, "Jaket Hoodie Teknik Sipil 2023", "Hoodie tebal warna biru dongker. Belum pernah dipakai.", 150000, "Pakaian", "Baru (Brand New)", "Universitas Indonesia - Depok, Beji", json.dumps(["CLOTHING", "NEW"]), "", "APPROVED")
         ]
-        cursor.executemany("INSERT INTO products (seller_id, name, description, price, category, condition, campus, tags, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", dummy_products)
+        cursor.executemany("INSERT INTO products (seller_id, name, description, price, category, condition, campus, tags, image_url, approval_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", dummy_products)
         
         dummy_services = [
-            (user_id, "Jasa Rakit PC / Install Ulang Laptop", "Menerima jasa rakit PC rapi, install Windows, Linux.", "IT Support", 100000, ""),
-            (user_id, "Jasa Desain Poster / UI UX", "Bisa desain pakai Figma atau Canva.", "Desain", 50000, "")
+            (user_id, "Jasa Rakit PC / Install Ulang Laptop", "Menerima jasa rakit PC rapi, install Windows, Linux.", "IT Support", 100000, "", "APPROVED"),
+            (user_id, "Jasa Desain Poster / UI UX", "Bisa desain pakai Figma atau Canva.", "Desain", 50000, "", "APPROVED")
         ]
-        cursor.executemany("INSERT INTO services (seller_id, title, description, category, price, image_url) VALUES (?, ?, ?, ?, ?, ?)", dummy_services)
+        cursor.executemany("INSERT INTO services (seller_id, title, description, category, price, image_url, approval_status) VALUES (?, ?, ?, ?, ?, ?, ?)", dummy_services)
         conn.commit()
     conn.close()
 
@@ -227,11 +232,14 @@ async def login(request: LoginRequest):
     conn.close()
     
     if user:
-        token = create_jwt({"user_id": user["id"], "name": user["name"], "campus": user["campus"]})
+        if user["verification_status"] == "PENDING":
+            raise HTTPException(status_code=403, detail="Account pending approval by admin")
+        
+        token = create_jwt({"user_id": user["id"], "name": user["name"], "campus": user["campus"], "role": user["role"]})
         return {
             "message": "Login berhasil!", 
             "token": token,
-            "user": {"id": user["id"], "name": user["name"], "email": user["email"], "campus": user["campus"]}
+            "user": {"id": user["id"], "name": user["name"], "email": user["email"], "campus": user["campus"], "role": user["role"]}
         }
     else:
         raise HTTPException(status_code=401, detail="Email atau password salah")
@@ -266,7 +274,7 @@ async def get_products(
         SELECT p.*, u.name as seller_name, u.campus as seller_campus 
         FROM products p
         JOIN users u ON p.seller_id = u.id
-        WHERE 1=1
+        WHERE p.approval_status = 'APPROVED'
     """
     params = []
 
@@ -461,14 +469,49 @@ class ServiceCreate(BaseModel):
     price: int
 
 @app.get("/services")
-async def get_services(request: Request):
+async def get_services(
+    request: Request,
+    q: Optional[str] = None,
+    category: Optional[str] = None,
+    min_price: Optional[int] = None,
+    max_price: Optional[int] = None,
+    campus: Optional[str] = None
+):
     conn = sqlite3.connect(DB_FILE)
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
-    cursor.execute("""
+
+    query = """
         SELECT s.*, u.name as seller_name, u.campus as seller_campus 
-        FROM services s JOIN users u ON s.seller_id = u.id ORDER BY s.id DESC
-    """)
+        FROM services s 
+        JOIN users u ON s.seller_id = u.id 
+        WHERE s.approval_status = 'APPROVED'
+    """
+    params = []
+
+    if q and q.strip():
+        query += " AND (s.title LIKE ? OR s.description LIKE ?)"
+        params.extend([f"%{q}%", f"%{q}%"])
+    
+    if category and category not in ["All", "Semua Kategori"]:
+        query += " AND s.category = ?"
+        params.append(category)
+        
+    if min_price is not None:
+        query += " AND s.price >= ?"
+        params.append(min_price)
+        
+    if max_price is not None:
+        query += " AND s.price <= ?"
+        params.append(max_price)
+        
+    if campus:
+        query += " AND u.campus = ?"
+        params.append(campus)
+
+    query += " ORDER BY s.id DESC"
+
+    cursor.execute(query, params)
     services = [dict(row) for row in cursor.fetchall()]
     conn.close()
     return services
@@ -511,3 +554,107 @@ async def user_profile(request: Request):
     if user:
         return dict(user)
     raise HTTPException(status_code=404, detail="User not found")
+
+# ADMIN ENDPOINTS
+
+def verify_admin(request: Request):
+    user = get_current_user(request)
+    if user.get("role") != "ADMIN":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return user
+
+@app.get("/admin/users")
+async def admin_get_users(request: Request):
+    verify_admin(request)
+    conn = sqlite3.connect(DB_FILE)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, name, email, campus, role, verification_status FROM users WHERE verification_status = 'PENDING'")
+    users = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    return users
+
+@app.post("/admin/users/{user_id}/{action}")
+async def admin_action_user(request: Request, user_id: int, action: str):
+    verify_admin(request)
+    if action not in ["approve", "reject"]:
+        raise HTTPException(status_code=400, detail="Invalid action")
+        
+    status = "APPROVED" if action == "approve" else "REJECTED"
+    
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute("UPDATE users SET verification_status = ? WHERE id = ?", (status, user_id))
+    conn.commit()
+    conn.close()
+    return {"message": f"User {action}d successfully"}
+
+@app.get("/admin/products")
+async def admin_get_products(request: Request):
+    verify_admin(request)
+    conn = sqlite3.connect(DB_FILE)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT p.*, u.name as seller_name 
+        FROM products p
+        JOIN users u ON p.seller_id = u.id
+        WHERE p.approval_status = 'PENDING'
+    ''')
+    items = [dict(row) for row in cursor.fetchall()]
+    # parse tags for json
+    for item in items:
+        if item.get("tags"):
+            try:
+                import json
+                item["tags"] = json.loads(item["tags"])
+            except:
+                item["tags"] = []
+    conn.close()
+    return items
+
+@app.post("/admin/products/{product_id}/{action}")
+async def admin_action_product(request: Request, product_id: int, action: str):
+    verify_admin(request)
+    if action not in ["approve", "reject"]:
+        raise HTTPException(status_code=400, detail="Invalid action")
+        
+    status = "APPROVED" if action == "approve" else "REJECTED"
+    
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute("UPDATE products SET approval_status = ? WHERE id = ?", (status, product_id))
+    conn.commit()
+    conn.close()
+    return {"message": f"Product {action}d successfully"}
+
+@app.get("/admin/services")
+async def admin_get_services(request: Request):
+    verify_admin(request)
+    conn = sqlite3.connect(DB_FILE)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT s.*, u.name as seller_name 
+        FROM services s
+        JOIN users u ON s.seller_id = u.id
+        WHERE s.approval_status = 'PENDING'
+    ''')
+    items = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    return items
+
+@app.post("/admin/services/{service_id}/{action}")
+async def admin_action_service(request: Request, service_id: int, action: str):
+    verify_admin(request)
+    if action not in ["approve", "reject"]:
+        raise HTTPException(status_code=400, detail="Invalid action")
+        
+    status = "APPROVED" if action == "approve" else "REJECTED"
+    
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute("UPDATE services SET approval_status = ? WHERE id = ?", (status, service_id))
+    conn.commit()
+    conn.close()
+    return {"message": f"Service {action}d successfully"}

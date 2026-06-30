@@ -71,14 +71,14 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     final myId = AuthService.currentUser != null ? AuthService.currentUser!['id'] : 0;
 
     return Scaffold(
-      backgroundColor: Color(0xFF0F0F11),
+      backgroundColor: context.colors.background,
       appBar: AppBar(
-        backgroundColor: Color(0xFF1E1E22),
+        backgroundColor: context.colors.cardBg,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(widget.otherUserName, style: TextStyle(color: context.colors.textPrimary, fontSize: 16)),
-            Text(widget.productName, style: TextStyle(color: Color(0xFFE67E22), fontSize: 12)),
+            Text(widget.productName, style: TextStyle(color: context.colors.primary, fontSize: 12)),
           ],
         ),
         iconTheme: IconThemeData(color: context.colors.textPrimary),
@@ -90,7 +90,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
               future: _historyFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(child: CircularProgressIndicator(color: Color(0xFFE67E22)));
+                  return Center(child: CircularProgressIndicator(color: context.colors.primary));
                 } else if (snapshot.hasError) {
                   return Center(child: Text('Error: ${snapshot.error}', style: TextStyle(color: Colors.red)));
                 }
@@ -111,7 +111,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                         margin: EdgeInsets.only(bottom: 12),
                         padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                         decoration: BoxDecoration(
-                          color: isMine ? Color(0xFFE67E22) : Color(0xFF2A2A30),
+                          color: isMine ? context.colors.primary : Color(0xFF2A2A30),
                           borderRadius: BorderRadius.only(
                             topLeft: const Radius.circular(12),
                             topRight: const Radius.circular(12),
@@ -133,7 +133,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
           Container(
             padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: Color(0xFF1E1E22),
+              color: context.colors.cardBg,
               border: Border(top: BorderSide(color: context.colors.textPrimary.withValues(alpha: 0.05))),
             ),
             child: SafeArea(
@@ -157,7 +157,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                   SizedBox(width: 8),
                   Container(
                     decoration: BoxDecoration(
-                      color: Color(0xFFE67E22),
+                      color: context.colors.primary,
                       shape: BoxShape.circle,
                     ),
                     child: IconButton(

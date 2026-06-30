@@ -58,10 +58,12 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: context.colors.background,
-      body: Center(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.symmetric(horizontal: 24.0),
-          child: ConstrainedBox(
+      body: Stack(
+        children: [
+          Center(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.symmetric(horizontal: 24.0),
+              child: ConstrainedBox(
             constraints: BoxConstraints(maxWidth: 400),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -219,6 +221,30 @@ class _LoginPageState extends State<LoginPage> {
           ),
         ),
       ),
-    );
+      Positioned(
+        top: 40,
+        right: 20,
+        child: SafeArea(
+          child: ValueListenableBuilder<ThemeMode>(
+            valueListenable: ThemeManager.themeNotifier,
+            builder: (_, themeMode, _) {
+              final isDark = themeMode == ThemeMode.dark;
+              return IconButton(
+                icon: Icon(
+                  isDark ? Icons.light_mode : Icons.dark_mode,
+                  color: context.colors.primary,
+                ),
+                onPressed: () {
+                  ThemeManager.toggleTheme();
+                  print('Theme toggled to: ${ThemeManager.themeNotifier.value}');
+                },
+              );
+            },
+          ),
+        ),
+      ),
+    ],
+  ),
+);
   }
 }

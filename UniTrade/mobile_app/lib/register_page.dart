@@ -35,6 +35,13 @@ class _RegisterPageState extends State<RegisterPage> {
       return;
     }
 
+    if (!_emailController.text.endsWith('@student.ac.id')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Email must be a @student.ac.id address'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
 
     try {
@@ -63,7 +70,7 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFF0F0F11),
+      backgroundColor: context.colors.background,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -81,8 +88,8 @@ class _RegisterPageState extends State<RegisterPage> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    Color(0xFFE67E22).withValues(alpha: 0.25),
-                    Color(0xFFE67E22).withValues(alpha: 0.05),
+                    context.colors.primary.withValues(alpha: 0.25),
+                    context.colors.primary.withValues(alpha: 0.05),
                     Colors.transparent,
                   ],
                   radius: 0.7,
@@ -100,7 +107,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   child: Container(
                     padding: EdgeInsets.all(24.0),
                     decoration: BoxDecoration(
-                      color: Color(0xFF1E1E22).withValues(alpha: 0.65),
+                      color: context.colors.cardBg.withValues(alpha: 0.65),
                       borderRadius: BorderRadius.circular(24),
                       border: Border.all(color: context.colors.textPrimary.withValues(alpha: 0.07), width: 1),
                     ),
@@ -139,10 +146,10 @@ class _RegisterPageState extends State<RegisterPage> {
                           child: ElevatedButton(
                             onPressed: _isLoading ? null : _register,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Color(0xFFE67E22),
+                              backgroundColor: context.colors.primary,
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
                               elevation: 8,
-                              shadowColor: Color(0xFFE67E22).withValues(alpha: 0.5),
+                              shadowColor: context.colors.primary.withValues(alpha: 0.5),
                             ),
                             child: _isLoading
                                 ? SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: context.colors.textPrimary, strokeWidth: 2))
@@ -171,7 +178,7 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget _buildTextField(TextEditingController controller, IconData icon, bool isPassword) {
     return Container(
       decoration: BoxDecoration(
-        color: Color(0xFF121214),
+        color: context.colors.cardBg,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: context.colors.textPrimary.withValues(alpha: 0.05)),
       ),

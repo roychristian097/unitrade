@@ -130,9 +130,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
               backgroundColor: context.colors.primary,
               child: Text(initial, style: TextStyle(color: context.colors.textPrimary, fontSize: 12, fontWeight: FontWeight.bold)),
             ),
-            IconButton(
+            PopupMenuButton<String>(
               icon: Icon(Icons.menu, color: Colors.grey),
-              onPressed: () {},
+              color: context.colors.cardBg,
+              onSelected: (value) {
+                if (value == 'logout') {
+                  AuthService.logout();
+                  Navigator.of(context, rootNavigator: true).pushReplacement(
+                    MaterialPageRoute(builder: (context) => const LoginPage()),
+                  );
+                }
+              },
+              itemBuilder: (context) => [
+                PopupMenuItem(
+                  value: 'logout',
+                  child: Row(
+                    children: [
+                      Icon(Icons.logout, color: Colors.red, size: 20),
+                      SizedBox(width: 12),
+                      Text('Log Out', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                ),
+              ],
             ),
             SizedBox(width: 8),
           ],

@@ -117,9 +117,9 @@ class _SellItemScreenState extends State<SellItemScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFF0F0F11),
+      backgroundColor: context.colors.background,
       appBar: AppBar(
-        backgroundColor: Color(0xFF0F0F11),
+        backgroundColor: context.colors.background,
         elevation: 0,
         title: Text('Sell An Item', style: TextStyle(color: context.colors.textPrimary, fontWeight: FontWeight.bold)),
         iconTheme: IconThemeData(color: context.colors.textPrimary),
@@ -139,7 +139,7 @@ class _SellItemScreenState extends State<SellItemScreen> {
                     width: double.infinity,
                     height: 180,
                     decoration: BoxDecoration(
-                      color: Color(0xFF1E1E22),
+                      color: context.colors.cardBg,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(color: context.colors.textPrimary.withValues(alpha: 0.1), style: BorderStyle.solid),
                       image: _imageFile != null
@@ -230,7 +230,7 @@ class _SellItemScreenState extends State<SellItemScreen> {
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _submitProduct,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFFE67E22),
+                    backgroundColor: context.colors.primary,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
                   ),
                   child: _isLoading
@@ -270,7 +270,7 @@ class _SellItemScreenState extends State<SellItemScreen> {
         hintText: hint,
         hintStyle: TextStyle(color: Colors.grey[600], fontSize: 14),
         filled: true,
-        fillColor: Color(0xFF1E1E22),
+        fillColor: context.colors.cardBg,
         contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
         errorStyle: TextStyle(color: Colors.redAccent),
@@ -283,14 +283,14 @@ class _SellItemScreenState extends State<SellItemScreen> {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
-        color: Color(0xFF1E1E22),
+        color: context.colors.cardBg,
         borderRadius: BorderRadius.circular(12),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: currentValue,
           isExpanded: true,
-          dropdownColor: Color(0xFF1E1E22),
+          dropdownColor: context.colors.cardBg,
           icon: Icon(Icons.keyboard_arrow_down, color: Colors.grey),
           style: TextStyle(color: context.colors.textPrimary, fontSize: 14),
           onChanged: onChanged,

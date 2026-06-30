@@ -22,9 +22,9 @@ class _ChatListScreenState extends State<ChatListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFF0F0F11),
+      backgroundColor: context.colors.background,
       appBar: AppBar(
-        backgroundColor: Color(0xFF1E1E22),
+        backgroundColor: context.colors.cardBg,
         title: Text("Pesan", style: TextStyle(color: context.colors.textPrimary)),
         iconTheme: IconThemeData(color: context.colors.textPrimary),
       ),
@@ -32,7 +32,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
         future: _chatsFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator(color: Color(0xFFE67E22)));
+            return Center(child: CircularProgressIndicator(color: context.colors.primary));
           } else if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}', style: TextStyle(color: Colors.red)));
           } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
@@ -54,7 +54,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(chat['product_name'] ?? 'Barang', style: TextStyle(color: Color(0xFFE67E22), fontSize: 12)),
+                    Text(chat['product_name'] ?? 'Barang', style: TextStyle(color: context.colors.primary, fontSize: 12)),
                     Text(chat['last_message'] ?? '', style: TextStyle(color: Colors.grey), maxLines: 1, overflow: TextOverflow.ellipsis),
                   ],
                 ),

@@ -190,9 +190,15 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
     final bool isDesktop = MediaQuery.of(context).size.width > 800;
 
     return Scaffold(
-      backgroundColor: Color(0xFF0F0F11),
+      backgroundColor: context.colors.background,
       appBar: _buildAppBar(isDesktop),
-      body: SingleChildScrollView(
+      body: RefreshIndicator(
+        onRefresh: () async {
+          setState(() {
+            _productsFuture = fetchProducts();
+          });
+        },
+        child: SingleChildScrollView(physics: const AlwaysScrollableScrollPhysics(), 
         child: Padding(
           padding: EdgeInsets.all(24.0),
           child: Column(
@@ -212,7 +218,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                     children: [
                       Text(
                         "Selamat datang, $_welcomeName 😊",
-                        style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                        style: TextStyle(color: context.colors.background, fontWeight: FontWeight.bold),
                       ),
                       InkWell(
                         onTap: () {
@@ -220,7 +226,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                             _showWelcomeMessage = false;
                           });
                         },
-                        child: Icon(Icons.close, color: Colors.black54, size: 18),
+                        child: Icon(Icons.close, color: context.colors.background.withValues(alpha: 0.54), size: 18),
                       )
                     ],
                   ),
@@ -252,19 +258,20 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
           ),
         ),
       ),
+      ),
     );
   }
 
   AppBar _buildAppBar(bool isDesktop) {
     return AppBar(
-      backgroundColor: Color(0xFF0F0F11),
+      backgroundColor: context.colors.background,
       elevation: 0,
       title: Row(
         children: [
           Container(
             padding: EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: Color(0xFFE67E22),
+              color: context.colors.primary,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(Icons.trending_up, color: context.colors.textPrimary, size: 16),
@@ -291,11 +298,11 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
             Navigator.push(context, MaterialPageRoute(builder: (context) => ChatListScreen()));
           }),
           SizedBox(width: 32),
-          IconButton(icon: Icon(Icons.light_mode_outlined, color: Colors.grey, size: 20), onPressed: () {}),
+          ValueListenableBuilder<ThemeMode>(valueListenable: ThemeManager.themeNotifier, builder: (_, mode, _) { return IconButton(icon: Icon(mode == ThemeMode.dark ? Icons.light_mode_outlined : Icons.dark_mode_outlined, color: context.colors.primary, size: 20), onPressed: () { ThemeManager.toggleTheme(); }); }),
           IconButton(icon: Icon(Icons.favorite_border, color: Colors.grey, size: 20), onPressed: () {}),
           IconButton(icon: Icon(Icons.shopping_cart_outlined, color: Colors.grey, size: 20), onPressed: () {}),
         ] else ...[
-          IconButton(icon: Icon(Icons.light_mode_outlined, color: Colors.grey, size: 20), onPressed: () {}),
+          ValueListenableBuilder<ThemeMode>(valueListenable: ThemeManager.themeNotifier, builder: (_, mode, _) { return IconButton(icon: Icon(mode == ThemeMode.dark ? Icons.light_mode_outlined : Icons.dark_mode_outlined, color: context.colors.primary, size: 20), onPressed: () { ThemeManager.toggleTheme(); }); }),
         ],
         IconButton(
           icon: Badge(
@@ -309,7 +316,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
           Container(
             padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: Color(0xFF1E1E22),
+              color: context.colors.cardBg,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(color: context.colors.textPrimary.withValues(alpha: 0.1)),
             ),
@@ -326,7 +333,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(AuthService.currentUser?['name'] ?? "Guest", style: TextStyle(color: context.colors.textPrimary, fontSize: 12, fontWeight: FontWeight.bold)),
-                    Text("120 pts", style: TextStyle(color: Color(0xFFE67E22), fontSize: 10)),
+                    Text("120 pts", style: TextStyle(color: context.colors.primary, fontSize: 10)),
                   ],
                 ),
                 SizedBox(width: 8),
@@ -345,17 +352,17 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isActive ? Color(0xFFE67E22).withValues(alpha: 0.2) : Colors.transparent,
+          color: isActive ? context.colors.primary.withValues(alpha: 0.2) : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
           children: [
-            Icon(icon, color: isActive ? Color(0xFFE67E22) : Colors.grey, size: 16),
+            Icon(icon, color: isActive ? context.colors.primary : Colors.grey, size: 16),
             SizedBox(width: 6),
             Text(
               title,
               style: TextStyle(
-                color: isActive ? Color(0xFFE67E22) : Colors.grey,
+                color: isActive ? context.colors.primary : Colors.grey,
                 fontSize: 14,
                 fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
               ),
@@ -370,7 +377,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
     return Container(
       padding: EdgeInsets.symmetric(vertical: 12),
       decoration: BoxDecoration(
-        color: Color(0xFF1E1E22),
+        color: context.colors.cardBg,
         border: Border(top: BorderSide(color: context.colors.textPrimary.withValues(alpha: 0.05))),
       ),
       child: SafeArea(
@@ -396,12 +403,12 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: isActive ? Color(0xFFE67E22) : Colors.grey, size: 24),
+          Icon(icon, color: isActive ? context.colors.primary : Colors.grey, size: 24),
           SizedBox(height: 4),
           Text(
             label,
             style: TextStyle(
-              color: isActive ? Color(0xFFE67E22) : Colors.grey,
+              color: isActive ? context.colors.primary : Colors.grey,
               fontSize: 10,
               fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
             ),
@@ -445,7 +452,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
           icon: Icon(Icons.add, color: context.colors.textPrimary, size: 18),
           label: Text("Sell An Item", style: TextStyle(color: context.colors.textPrimary, fontWeight: FontWeight.bold)),
           style: ElevatedButton.styleFrom(
-            backgroundColor: Color(0xFFE67E22),
+            backgroundColor: context.colors.primary,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           ),
@@ -466,7 +473,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
               hintText: "Search for laptops, books, etc...",
               hintStyle: TextStyle(color: Colors.grey[600], fontSize: 13),
               filled: true,
-              fillColor: Color(0xFF1E1E22),
+              fillColor: context.colors.cardBg,
               prefixIcon: Icon(Icons.search, color: Colors.grey, size: 20),
               contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
@@ -479,7 +486,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
           child: Container(
             padding: EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Color(0xFFE67E22),
+              color: context.colors.primary,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(Icons.tune, color: context.colors.textPrimary, size: 20),
@@ -492,7 +499,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
   void _showMobileFilterSheet() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Color(0xFF121214),
+      backgroundColor: context.colors.cardBg,
       isScrollControlled: true,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -505,7 +512,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                 bottom: MediaQuery.of(context).viewInsets.bottom,
                 left: 20, right: 20, top: 20,
               ),
-              child: SingleChildScrollView(
+              child: SingleChildScrollView(physics: const AlwaysScrollableScrollPhysics(), 
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -515,7 +522,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                         width: 40,
                         height: 4,
                         decoration: BoxDecoration(
-                          color: Colors.grey[700],
+                          color: context.colors.border,
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
@@ -551,8 +558,8 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                               }
                             });
                           },
-                          activeColor: Color(0xFFE67E22),
-                          checkColor: Colors.black,
+                          activeColor: context.colors.primary,
+                          checkColor: context.colors.background,
                         ),
                         Expanded(
                           child: Text(
@@ -566,14 +573,14 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                     Container(
                       padding: EdgeInsets.symmetric(horizontal: 12),
                       decoration: BoxDecoration(
-                        color: Color(0xFF1E1E22),
+                        color: context.colors.cardBg,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<String>(
                           value: _selectedJabodetabekCampus,
                           isExpanded: true,
-                          dropdownColor: Color(0xFF1E1E22),
+                          dropdownColor: context.colors.cardBg,
                           icon: Icon(Icons.keyboard_arrow_down, color: Colors.grey, size: 16),
                           style: TextStyle(color: context.colors.textPrimary, fontSize: 12),
                           onChanged: (String? newValue) {
@@ -604,7 +611,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                           _applyFilters();
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Color(0xFFE67E22),
+                          backgroundColor: context.colors.primary,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                           padding: EdgeInsets.symmetric(vertical: 16),
                         ),
@@ -626,7 +633,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
     return Container(
       padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Color(0xFF121214),
+        color: context.colors.cardBg,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: context.colors.textPrimary.withValues(alpha: 0.05)),
       ),
@@ -672,8 +679,8 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                     }
                   });
                 },
-                activeColor: Color(0xFFE67E22),
-                checkColor: Colors.black,
+                activeColor: context.colors.primary,
+                checkColor: context.colors.background,
               ),
               Expanded(
                 child: Text(
@@ -687,14 +694,14 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
           Container(
             padding: EdgeInsets.symmetric(horizontal: 12),
             decoration: BoxDecoration(
-              color: Color(0xFF1E1E22),
+              color: context.colors.cardBg,
               borderRadius: BorderRadius.circular(8),
             ),
             child: DropdownButtonHideUnderline(
               child: DropdownButton<String>(
                 value: _selectedJabodetabekCampus,
                 isExpanded: true,
-                dropdownColor: Color(0xFF1E1E22),
+                dropdownColor: context.colors.cardBg,
                 icon: Icon(Icons.keyboard_arrow_down, color: Colors.grey, size: 16),
                 style: TextStyle(color: context.colors.textPrimary, fontSize: 12),
                 onChanged: (String? newValue) {
@@ -722,8 +729,8 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
             child: ElevatedButton(
               onPressed: _applyFilters,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: Colors.black,
+                backgroundColor: context.colors.textPrimary,
+                foregroundColor: context.colors.background,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                 padding: EdgeInsets.symmetric(vertical: 14),
               ),
@@ -752,7 +759,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
         hintText: hint,
         hintStyle: TextStyle(color: Colors.grey[600], fontSize: 13),
         filled: true,
-        fillColor: Color(0xFF1E1E22),
+        fillColor: context.colors.cardBg,
         contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
       ),
@@ -763,14 +770,14 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        color: Color(0xFF1E1E22),
+        color: context.colors.cardBg,
         borderRadius: BorderRadius.circular(8),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: _selectedCategory,
           isExpanded: true,
-          dropdownColor: Color(0xFF1E1E22),
+          dropdownColor: context.colors.cardBg,
           icon: Icon(Icons.keyboard_arrow_down, color: Colors.grey, size: 16),
           style: TextStyle(color: context.colors.textPrimary, fontSize: 13),
           onChanged: (String? newValue) {
@@ -799,14 +806,14 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        color: Color(0xFF1E1E22),
+        color: context.colors.cardBg,
         borderRadius: BorderRadius.circular(8),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: _selectedCondition,
           isExpanded: true,
-          dropdownColor: Color(0xFF1E1E22),
+          dropdownColor: context.colors.cardBg,
           icon: Icon(Icons.keyboard_arrow_down, color: Colors.grey, size: 16),
           style: TextStyle(color: context.colors.textPrimary, fontSize: 13),
           onChanged: (String? newValue) {
@@ -836,7 +843,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
       future: _productsFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator(color: Color(0xFFE67E22)));
+          return Center(child: CircularProgressIndicator(color: context.colors.primary));
         } else if (snapshot.hasError) {
           return Center(child: Text("Error: ${snapshot.error}", style: TextStyle(color: Colors.red)));
         }
@@ -908,14 +915,16 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                       ClipRRect(
                         borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                         child: Image.network(
-                          'http://192.168.1.3:8000${product.imageUrl}',
+                          product.imageUrl.startsWith('http')
+                              ? product.imageUrl
+                              : 'http://192.168.1.3:8000${product.imageUrl}',
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) =>
-                              Icon(Icons.image_outlined, color: Colors.grey[700], size: 50),
+                              Icon(Icons.image_outlined, color: context.colors.border, size: 50),
                         ),
                       )
                     else
-                      Center(child: Icon(Icons.image_outlined, color: Colors.grey[700], size: 50)),
+                      Center(child: Icon(Icons.image_outlined, color: context.colors.border, size: 50)),
                     Positioned(
                       top: 12,
                       left: 12,
@@ -927,7 +936,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.location_on, color: Color(0xFFE67E22), size: 10),
+                            Icon(Icons.location_on, color: context.colors.primary, size: 10),
                             SizedBox(width: 4),
                             Text(product.campus, style: TextStyle(color: context.colors.textPrimary, fontSize: 9)),
                           ],
@@ -949,11 +958,11 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(tag1, style: TextStyle(color: Color(0xFFE67E22), fontSize: 10, fontWeight: FontWeight.bold)),
+                        Text(tag1, style: TextStyle(color: context.colors.primary, fontSize: 10, fontWeight: FontWeight.bold)),
                         Container(
                           padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: Colors.grey[800],
+                            color: context.colors.cardBg,
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(tag2, style: TextStyle(color: context.colors.textPrimary, fontSize: 9)),
@@ -984,7 +993,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                         ),
                         Text(
                           "View details ->",
-                          style: TextStyle(color: Color(0xFFE67E22), fontSize: 12, fontWeight: FontWeight.w500),
+                          style: TextStyle(color: context.colors.primary, fontSize: 12, fontWeight: FontWeight.w500),
                         ),
                       ],
                     )
