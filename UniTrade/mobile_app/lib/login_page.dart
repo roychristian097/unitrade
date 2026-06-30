@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'theme.dart';
 import 'dart:ui'; 
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -6,7 +7,7 @@ import 'marketplace_screen.dart';
 import 'auth_service.dart';
 import 'register_page.dart';
 class LoginPage extends StatefulWidget {
-  const LoginPage({Key? key}) : super(key: key);
+  LoginPage({Key? key}) : super(key: key);
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -67,7 +68,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F0F11), 
+      backgroundColor: context.bgColor, 
       body: Stack(
         children: [
           // 1. Efek Pendaran Gradasi Oranye di Latar Belakang
@@ -81,8 +82,8 @@ class _LoginPageState extends State<LoginPage> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    const Color(0xFFE67E22).withOpacity(0.25), 
-                    const Color(0xFFE67E22).withOpacity(0.05),
+                    Color(0xFFE67E22).withOpacity(0.25), 
+                    Color(0xFFE67E22).withOpacity(0.05),
                     Colors.transparent,
                   ],
                   radius: 0.7,
@@ -94,7 +95,7 @@ class _LoginPageState extends State<LoginPage> {
           // 2. Konten Utama Kontainer Login
           SafeArea(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+              padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -104,27 +105,10 @@ class _LoginPageState extends State<LoginPage> {
                     children: [
                       Row(
                         children: [
-                          Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFE67E22),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Icon(
-                              Icons.trending_up, 
-                              color: Colors.white,
-                              size: 16,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          const Text(
-                            'UniTrade',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 0.5,
-                            ),
+                          Image.asset(
+                            'assets/images/logo_combined.png',
+                            height: 28,
+                            fit: BoxFit.contain,
                           ),
                         ],
                       ),
@@ -138,14 +122,14 @@ class _LoginPageState extends State<LoginPage> {
                         child: Text(
                           'Sign Up',
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.6), 
+                            color: context.textColor.withOpacity(0.6), 
                             fontSize: 14,
                           ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 50),
+                  SizedBox(height: 50),
 
                   // Kartu Login Sentral dengan Efek Frosted Glass
                   ClipRRect(
@@ -153,12 +137,12 @@ class _LoginPageState extends State<LoginPage> {
                     child: BackdropFilter(
                       filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
                       child: Container(
-                        padding: const EdgeInsets.all(24.0),
+                        padding: EdgeInsets.all(24.0),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1E1E22).withOpacity(0.65),
+                          color: context.surfaceColor.withOpacity(0.65),
                           borderRadius: BorderRadius.circular(24),
                           border: Border.all(
-                            color: Colors.white.withOpacity(0.07),
+                            color: context.borderColor,
                             width: 1,
                           ),
                         ),
@@ -166,38 +150,25 @@ class _LoginPageState extends State<LoginPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Center(
-                              child: Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFE67E22),
-                                  shape: BoxShape.circle,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: const Color(0xFFE67E22).withOpacity(0.3),
-                                      blurRadius: 15,
-                                      spreadRadius: 2,
-                                    )
-                                  ],
-                                ),
-                                child: const Icon(
-                                  Icons.trending_up,
-                                  color: Colors.white,
-                                  size: 26,
-                                ),
+                              child: Image.asset(
+                                'assets/images/logo_mark.png',
+                                width: 52,
+                                height: 52,
+                                fit: BoxFit.contain,
                               ),
                             ),
-                            const SizedBox(height: 16),
-                            const Center(
+                            SizedBox(height: 16),
+                            Center(
                               child: Text(
                                 'Welcome Back',
                                 style: TextStyle(
-                                  color: Colors.white,
+                                  color: context.textColor,
                                   fontSize: 22,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 6),
+                            SizedBox(height: 6),
                             Center(
                               child: Text(
                                 'Sign in to your account and manage your dashboard.',
@@ -208,10 +179,10 @@ class _LoginPageState extends State<LoginPage> {
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 28),
+                            SizedBox(height: 28),
 
                             // Input Field: Email
-                            const Text(
+                            Text(
                               'Email field',
                               style: TextStyle(
                                 color: Color(0xFFE67E22),
@@ -219,20 +190,20 @@ class _LoginPageState extends State<LoginPage> {
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
-                            const SizedBox(height: 8),
+                            SizedBox(height: 8),
                             TextField(
                               controller: _emailController,
-                              style: const TextStyle(color: Colors.white),
+                              style: TextStyle(color: context.textColor),
                               decoration: InputDecoration(
                                 hintText: 'Your email address',
                                 hintStyle: TextStyle(color: Colors.grey[600], fontSize: 14),
                                 prefixIcon: Icon(Icons.mail_outline, color: Colors.grey[500], size: 20),
                                 filled: true,
-                                fillColor: const Color(0xFF121214),
-                                contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                                fillColor: context.surfaceHighlight,
+                                contentPadding: EdgeInsets.symmetric(vertical: 16),
                                 enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(color: const Color(0xFFE67E22).withOpacity(0.4)),
+                                  borderSide: BorderSide(color: Color(0xFFE67E22).withOpacity(0.4)),
                                 ),
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
@@ -240,13 +211,13 @@ class _LoginPageState extends State<LoginPage> {
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 20),
+                            SizedBox(height: 20),
 
                             // Input Field: Password
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Text(
+                                Text(
                                   'Password',
                                   style: TextStyle(
                                     color: Color(0xFFE67E22),
@@ -256,7 +227,7 @@ class _LoginPageState extends State<LoginPage> {
                                 ),
                                 GestureDetector(
                                   onTap: () {},
-                                  child: const Text(
+                                  child: Text(
                                     'Forgot password?',
                                     style: TextStyle(
                                       color: Color(0xFFE67E22),
@@ -266,11 +237,11 @@ class _LoginPageState extends State<LoginPage> {
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 8),
+                            SizedBox(height: 8),
                             TextField(
                               controller: _passwordController,
                               obscureText: _isPasswordObscured,
-                              style: const TextStyle(color: Colors.white),
+                              style: TextStyle(color: context.textColor),
                               decoration: InputDecoration(
                                 hintText: 'Your password',
                                 hintStyle: TextStyle(color: Colors.grey[600], fontSize: 14),
@@ -288,11 +259,11 @@ class _LoginPageState extends State<LoginPage> {
                                   },
                                 ),
                                 filled: true,
-                                fillColor: const Color(0xFF121214),
-                                contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                                fillColor: context.surfaceHighlight,
+                                contentPadding: EdgeInsets.symmetric(vertical: 16),
                                 enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(color: Colors.white.withOpacity(0.08)),
+                                  borderSide: BorderSide(color: context.borderColor),
                                 ),
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
@@ -300,7 +271,7 @@ class _LoginPageState extends State<LoginPage> {
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 28),
+                            SizedBox(height: 28),
 
                             // Tombol Log in Berlogika Loading
                             SizedBox(
@@ -316,24 +287,24 @@ class _LoginPageState extends State<LoginPage> {
                                   elevation: 0,
                                 ),
                                 child: _isLoading 
-                                    ? const SizedBox(
+                                    ? SizedBox(
                                         height: 24,
                                         width: 24,
-                                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                        child: CircularProgressIndicator(color: context.textColor, strokeWidth: 2),
                                       )
                                     : Row(
                                         mainAxisAlignment: MainAxisAlignment.center,
-                                        children: const [
+                                        children: [
                                           Text(
                                             'Log in',
                                             style: TextStyle(
-                                              color: Colors.white,
+                                              color: context.textColor,
                                               fontSize: 16,
                                               fontWeight: FontWeight.bold,
                                             ),
                                           ),
                                           SizedBox(width: 8),
-                                          Icon(Icons.arrow_forward, color: Colors.white, size: 18),
+                                          Icon(Icons.arrow_forward, color: context.textColor, size: 18),
                                         ],
                                       ),
                               ),
@@ -343,7 +314,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 35),
+                  SizedBox(height: 35),
 
                   // Tombol Metode Login Sosial berbentuk kapsul
                   _buildSocialButton(
@@ -351,16 +322,16 @@ class _LoginPageState extends State<LoginPage> {
                     icon: Icons.g_mobiledata_rounded, 
                     onPressed: () {},
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
                   _buildSocialButton(
                     text: 'Log in with Apple',
                     icon: Icons.apple,
                     onPressed: () {},
                   ),
-                  const SizedBox(height: 40),
+                  SizedBox(height: 40),
 
                   // Footer Hak Cipta
-                  const Text(
+                  Text(
                     '© 2026 UniTrade, Inc. All rights reserved.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
@@ -387,8 +358,8 @@ class _LoginPageState extends State<LoginPage> {
       child: OutlinedButton(
         onPressed: onPressed,
         style: OutlinedButton.styleFrom(
-          backgroundColor: const Color(0xFF1E1E22).withOpacity(0.6),
-          side: BorderSide(color: Colors.white.withOpacity(0.08)),
+          backgroundColor: context.surfaceColor.withOpacity(0.6),
+          side: BorderSide(color: context.borderColor),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(24), 
           ),
@@ -396,12 +367,11 @@ class _LoginPageState extends State<LoginPage> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: Colors.white, size: 22),
-            const SizedBox(width: 10),
+            Icon(icon, color: context.textColor, size: 22),
+            SizedBox(width: 10),
             Text(
               text,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(color: context.textColor,
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
               ),

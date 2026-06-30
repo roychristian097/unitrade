@@ -2,6 +2,8 @@ import 'dart:convert'; // Huruf 'i' harus kecil
 import 'package:http/http.dart' as http; 
 import 'package:flutter/material.dart';
 import 'login_page.dart'; // Import file login
+import 'splash_screen.dart'; // Import file splash screen
+import 'theme.dart';
 
 void main() {
   runApp(const MyApp());
@@ -12,13 +14,36 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'UniTrade App',
-      debugShowCheckedModeBanner: false, 
-      theme: ThemeData(
-        brightness: Brightness.dark, 
-      ),
-      home: const LoginPage(), // Menjadikan LoginPage sebagai halaman utama
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: themeNotifier,
+      builder: (context, currentMode, _) {
+        return MaterialApp(
+          title: 'UniTrade App',
+          debugShowCheckedModeBanner: false, 
+          themeMode: currentMode,
+          theme: ThemeData(
+            brightness: Brightness.light, 
+            primaryColor: const Color(0xFFE67E22),
+            scaffoldBackgroundColor: const Color(0xFFF8F9FA),
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFFE67E22),
+              secondary: Color(0xFFD35400),
+              surface: Colors.white,
+            ),
+          ),
+          darkTheme: ThemeData(
+            brightness: Brightness.dark, 
+            primaryColor: const Color(0xFFE67E22),
+            scaffoldBackgroundColor: const Color(0xFF0F0F11),
+            colorScheme: const ColorScheme.dark(
+              primary: Color(0xFFE67E22),
+              secondary: Color(0xFFD35400),
+              surface: Color(0xFF1E1E22),
+            ),
+          ),
+          home: const SplashScreen(), // Menjadikan SplashScreen sebagai halaman utama
+        );
+      },
     );
   }
 }

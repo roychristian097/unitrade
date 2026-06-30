@@ -84,10 +84,21 @@ def init_db():
             condition TEXT,
             campus TEXT,
             tags TEXT,
-            image_url TEXT,
-            FOREIGN KEY(seller_id) REFERENCES users(id)
+            image_url TEXT
         )
     ''')
+    
+    # Auto-migrate: Add new columns if they don't exist
+    try:
+        cursor.execute("ALTER TABLE products ADD COLUMN item_type TEXT DEFAULT 'Barang'")
+    except sqlite3.OperationalError:
+        pass
+        
+    try:
+        cursor.execute("ALTER TABLE products ADD COLUMN advanced_details TEXT DEFAULT '{}'")
+    except sqlite3.OperationalError:
+        pass
+
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS messages (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -181,19 +192,6 @@ async def login(request: LoginRequest):
     else:
         raise HTTPException(status_code=401, detail="Email atau password salah")
 
-@app.get("/campuses")
-async def get_campuses():
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute('''
-        SELECT campus FROM users WHERE campus IS NOT NULL AND campus != ''
-        UNION
-        SELECT campus FROM products WHERE campus IS NOT NULL AND campus != ''
-    ''')
-    campuses = [row[0] for row in cursor.fetchall()]
-    conn.close()
-    return campuses
-
 @app.get("/products")
 async def get_products(
     q: Optional[str] = None,
@@ -220,8 +218,12 @@ async def get_products(
         params.extend([f"%{q}%", f"%{q}%"])
     
     if category and category not in ["All", "Semua Kategori"]:
-        query += " AND p.category = ?"
-        params.append(category)
+        if category == "Jasa":
+            query += " AND (p.category = ? OR p.item_type = ?)"
+            params.extend([category, category])
+        else:
+            query += " AND p.category = ?"
+            params.append(category)
         
     if condition and condition not in ["Any Condition", "Semua Kondisi"]:
         query += " AND p.condition = ?"
@@ -247,7 +249,7 @@ async def get_products(
 
     results = []
     for row in rows:
-        results.append({
+        product_dict = {
             "id": row["id"],
             "seller_id": row["seller_id"],
             "seller_name": row["seller_name"],
@@ -259,10 +261,28 @@ async def get_products(
             "condition": row["condition"],
             "campus": row["campus"],
             "tags": json.loads(row["tags"]) if row["tags"] else [],
-            "image_url": row["image_url"]
-        })
+            "image_url": row["image_url"],
+            "item_type": row["item_type"] if "item_type" in row.keys() else "Barang",
+            "advanced_details": {}
+        }
+        if "advanced_details" in row.keys() and row["advanced_details"]:
+            try:
+                product_dict["advanced_details"] = json.loads(row["advanced_details"])
+            except Exception:
+                pass
+        results.append(product_dict)
 
     return results
+
+@app.get("/campuses")
+async def get_campuses():
+    conn = sqlite3.connect(DB_FILE)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    cursor.execute("SELECT DISTINCT campus FROM users WHERE campus IS NOT NULL AND campus != ''")
+    rows = cursor.fetchall()
+    conn.close()
+    return [row["campus"] for row in rows]
 
 @app.post("/products")
 async def create_product(
@@ -274,6 +294,8 @@ async def create_product(
     condition: str = Form(...),
     campus: str = Form(...),
     tags: str = Form(...),
+    item_type: str = Form("Barang"),
+    advanced_details: str = Form("{}"),
     file: Optional[UploadFile] = File(None)
 ):
     current_user = get_current_user(request)
@@ -288,13 +310,13 @@ async def create_product(
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
     cursor.execute('''
-        INSERT INTO products (seller_id, name, description, price, category, condition, campus, tags, image_url) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ''', (current_user["user_id"], name, description, price, category, condition, campus, tags, image_url))
+        INSERT INTO products (seller_id, name, description, price, category, condition, campus, tags, image_url, item_type, advanced_details) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (current_user["user_id"], name, description, price, category, condition, campus, tags, image_url, item_type, advanced_details))
     conn.commit()
     new_id = cursor.lastrowid
     conn.close()
-    return {"message": "Product created successfully", "id": new_id, "image_url": image_url}
+    return {"message": "Product created successfully", "product_id": new_id}
 
 @app.put("/products/{product_id}")
 async def update_product(
@@ -307,6 +329,8 @@ async def update_product(
     condition: str = Form(...),
     campus: str = Form(...),
     tags: str = Form(...),
+    item_type: str = Form("Barang"),
+    advanced_details: str = Form("{}"),
     file: Optional[UploadFile] = File(None)
 ):
     current_user = get_current_user(request)
@@ -315,18 +339,17 @@ async def update_product(
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
     
-    # Check if product exists and user is owner
     cursor.execute("SELECT * FROM products WHERE id = ?", (product_id,))
     product = cursor.fetchone()
     
     if not product:
         conn.close()
-        raise HTTPException(status_code=404, detail="Product not found")
+        raise HTTPException(status_code=404, detail="Produk tidak ditemukan")
         
     if product["seller_id"] != current_user["user_id"]:
         conn.close()
-        raise HTTPException(status_code=403, detail="Not authorized to edit this product")
-
+        raise HTTPException(status_code=403, detail="Anda tidak berhak mengedit produk ini")
+        
     image_url = product["image_url"]
     if file and file.filename:
         file_path = f"uploads/{file.filename}"
@@ -336,13 +359,15 @@ async def update_product(
         
     cursor.execute('''
         UPDATE products 
-        SET name = ?, description = ?, price = ?, category = ?, condition = ?, campus = ?, tags = ?, image_url = ?
-        WHERE id = ?
-    ''', (name, description, price, category, condition, campus, tags, image_url, product_id))
+        SET name=?, description=?, price=?, category=?, condition=?, campus=?, tags=?, image_url=?, item_type=?, advanced_details=?
+        WHERE id=?
+    ''', (name, description, price, category, condition, campus, tags, image_url, item_type, advanced_details, product_id))
     
     conn.commit()
     conn.close()
-    return {"message": "Product updated successfully", "id": product_id, "image_url": image_url}
+    return {"message": "Product updated successfully"}
+
+# Socket.io setup for chat
 
 @app.post("/messages")
 async def send_message(request: Request, msg: MessageCreate):
