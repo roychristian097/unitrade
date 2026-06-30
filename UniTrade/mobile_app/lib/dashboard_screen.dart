@@ -5,6 +5,7 @@ import 'auth_service.dart';
 import 'theme.dart';
 import 'login_page.dart';
 import 'wishlist_screen.dart';
+import 'notification_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -103,7 +104,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               children: [
                 IconButton(
                   icon: Icon(Icons.notifications_none, color: Colors.grey),
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.push(context,  MaterialPageRoute(builder: (context) => NotificationScreen()));
+                  },
                 ),
                 Positioned(
                   top: 12,
@@ -136,8 +139,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               onSelected: (value) {
                 if (value == 'logout') {
                   AuthService.logout();
-                  Navigator.of(context, rootNavigator: true).pushReplacement(
+                  Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
                     MaterialPageRoute(builder: (context) => const LoginPage()),
+                    (route) => false,
                   );
                 }
               },
@@ -185,7 +189,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                         SizedBox(height: 4),
                         Text(
-                          "$campus • ID: $id",
+                          "$campus â€¢ ID: $id",
                           style: TextStyle(color: context.colors.textMuted, fontSize: 14),
                         ),
                         SizedBox(height: 24),
@@ -284,7 +288,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           title: "My Wishlist", 
                           isSelected: false,
                           onTap: () {
-                            Navigator.push(context, MaterialPageRoute(builder: (context) => WishlistScreen()));
+                            Navigator.push(context,  MaterialPageRoute(builder: (context) => WishlistScreen()));
                           },
                         ),
                         _buildActionItem(
@@ -293,8 +297,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           isSelected: false,
                           onTap: () {
                             AuthService.logout();
-                            Navigator.pushAndRemoveUntil(
-                              context,
+                            Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
                               MaterialPageRoute(builder: (context) => LoginPage()),
                               (route) => false,
                             );
@@ -328,12 +331,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
         child: Row(
           children: [
-            Icon(icon, color: isSelected ? Colors.black87 : Colors.white70, size: 20),
+            Icon(icon, color: isSelected ? Colors.black87 : context.colors.textMuted, size: 20),
             SizedBox(width: 16),
             Text(
               title, 
               style: TextStyle(
-                color: isSelected ? Colors.black87 : Colors.white, 
+                color: isSelected ? Colors.black87 : context.colors.textPrimary, 
                 fontSize: 16, 
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.w500
               )

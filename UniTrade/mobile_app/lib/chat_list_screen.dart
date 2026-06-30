@@ -1,4 +1,4 @@
-import 'theme.dart';
+﻿import 'theme.dart';
 import 'package:flutter/material.dart';
 import 'chat_service.dart';
 import 'chat_detail_screen.dart';
@@ -60,8 +60,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                 ),
                 isThreeLine: true,
                 onTap: () {
-                  Navigator.push(
-                    context,
+                  Navigator.push(context, 
                     MaterialPageRoute(
                       builder: (context) => ChatDetailScreen(
                         otherUserId: chat['other_user_id'],

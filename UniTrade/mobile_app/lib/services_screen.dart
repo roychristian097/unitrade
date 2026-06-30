@@ -7,6 +7,9 @@ import 'sell_service_screen.dart';
 import 'auth_service.dart';
 import 'chat_list_screen.dart';
 import 'marketplace_screen.dart'; 
+import 'service_detail_screen.dart';
+import 'wishlist_screen.dart';
+import 'notification_screen.dart';
 
 class CurrencyInputFormatter extends TextInputFormatter {
   @override
@@ -203,7 +206,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        "Selamat datang, $_welcomeName 😊",
+                        "Selamat datang, $_welcomeName ðŸ˜Š",
                         style: TextStyle(color: context.colors.background, fontWeight: FontWeight.bold),
                       ),
                       InkWell(
@@ -255,18 +258,18 @@ class _ServicesScreenState extends State<ServicesScreen> {
       title: Row(
         children: [
           Container(
-            padding: EdgeInsets.all(6),
+            padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: context.colors.primary,
+              color: const Color(0xFFE67E22),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(Icons.trending_up, color: context.colors.textPrimary, size: 16),
+            child: const Icon(Icons.trending_up, color: Colors.white, size: 16),
           ),
-          SizedBox(width: 8),
-          Text(
+          const SizedBox(width: 8),
+          const Text(
             'UniTrade',
             style: TextStyle(
-              color: context.colors.textPrimary,
+              color: Colors.white,
               fontSize: 18,
               fontWeight: FontWeight.bold,
               letterSpacing: 0.5,
@@ -277,17 +280,19 @@ class _ServicesScreenState extends State<ServicesScreen> {
       actions: [
         if (isDesktop) ...[
           _buildAppBarTab("Marketplace", icon: Icons.storefront, onTap: () {
-            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => MarketplaceScreen()));
+            Navigator.pushReplacement(context,  MaterialPageRoute(builder: (context) => MarketplaceScreen()));
           }),
           SizedBox(width: 16),
           _buildAppBarTab("Services", isActive: true, icon: Icons.build_circle_outlined),
           SizedBox(width: 16),
           _buildAppBarTab("Chat", icon: Icons.chat_bubble_outline, onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => ChatListScreen()));
+            Navigator.push(context,  MaterialPageRoute(builder: (context) => ChatListScreen()));
           }),
           SizedBox(width: 32),
           ValueListenableBuilder<ThemeMode>(valueListenable: ThemeManager.themeNotifier, builder: (_, mode, _) { return IconButton(icon: Icon(mode == ThemeMode.dark ? Icons.light_mode_outlined : Icons.dark_mode_outlined, color: context.colors.primary, size: 20), onPressed: () { ThemeManager.toggleTheme(); }); }),
-          IconButton(icon: Icon(Icons.favorite_border, color: Colors.grey, size: 20), onPressed: () {}),
+          IconButton(icon: Icon(Icons.favorite_border, color: Colors.grey, size: 20), onPressed: () {
+            Navigator.push(context,  MaterialPageRoute(builder: (context) => WishlistScreen()));
+          }),
           IconButton(icon: Icon(Icons.shopping_cart_outlined, color: Colors.grey, size: 20), onPressed: () {}),
         ] else ...[
           ValueListenableBuilder<ThemeMode>(valueListenable: ThemeManager.themeNotifier, builder: (_, mode, _) { return IconButton(icon: Icon(mode == ThemeMode.dark ? Icons.light_mode_outlined : Icons.dark_mode_outlined, color: context.colors.primary, size: 20), onPressed: () { ThemeManager.toggleTheme(); }); }),
@@ -297,7 +302,9 @@ class _ServicesScreenState extends State<ServicesScreen> {
             backgroundColor: Colors.red,
             child: Icon(Icons.notifications_none, color: Colors.grey, size: 20),
           ),
-          onPressed: () {},
+          onPressed: () {
+            Navigator.push(context,  MaterialPageRoute(builder: (context) => const NotificationScreen()));
+          },
         ),
         if (isDesktop) SizedBox(width: 16),
         if (isDesktop)
@@ -384,8 +391,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
         ),
         ElevatedButton.icon(
           onPressed: () async {
-            final result = await Navigator.push(
-              context,
+            final result = await Navigator.push(context, 
               MaterialPageRoute(builder: (context) => SellServiceScreen()),
             );
             if (result == true) {
@@ -787,21 +793,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
 
     return InkWell(
       onTap: () {
-        showModalBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          backgroundColor: context.colors.background,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          builder: (context) => DraggableScrollableSheet(
-            initialChildSize: 0.6,
-            minChildSize: 0.4,
-            maxChildSize: 0.9,
-            expand: false,
-            builder: (_, controller) => _buildServiceDetailSheet(context, service, controller),
-          ),
-        );
+        Navigator.push(context,  MaterialPageRoute(builder: (context) => ServiceDetailScreen(service: service)));
       },
       borderRadius: BorderRadius.circular(AppTheme.radiusCard),
       child: GlassContainer(

@@ -7,6 +7,8 @@ import 'marketplace_screen.dart'; // import to reuse Product and formatCurrency
 import 'auth_service.dart';
 import 'chat_detail_screen.dart';
 import 'chat_list_screen.dart';
+import 'wishlist_screen.dart';
+import 'notification_screen.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final Product product;
@@ -20,11 +22,61 @@ class ProductDetailScreen extends StatefulWidget {
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
   List<Product> _relatedProducts = [];
   bool _isLoadingRelated = true;
+  bool _isWishlisted = false;
+  bool _isLoadingWishlist = true;
 
   @override
   void initState() {
     super.initState();
     _fetchRelatedProducts();
+    _checkWishlistStatus();
+  }
+
+  Future<void> _checkWishlistStatus() async {
+    try {
+      final token = AuthService.token;
+      if (token == null) return;
+      
+      final response = await http.get(
+        Uri.parse('${AuthService.baseUrl}/wishlist/${widget.product.id}/check'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        setState(() {
+          _isWishlisted = data['is_wishlisted'] ?? false;
+          _isLoadingWishlist = false;
+        });
+      }
+    } catch (e) {
+      setState(() => _isLoadingWishlist = false);
+    }
+  }
+
+  Future<void> _toggleWishlist() async {
+    try {
+      final token = AuthService.token;
+      if (token == null) return;
+      
+      setState(() {
+        _isWishlisted = !_isWishlisted;
+      });
+      
+      final response = await http.post(
+        Uri.parse('${AuthService.baseUrl}/wishlist/${widget.product.id}'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      
+      if (response.statusCode != 200) {
+        setState(() {
+          _isWishlisted = !_isWishlisted;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _isWishlisted = !_isWishlisted;
+      });
+    }
   }
 
   Future<void> _fetchRelatedProducts() async {
@@ -56,7 +108,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     return Scaffold(
       backgroundColor: context.colors.background,
       appBar: _buildAppBar(isDesktop),
-      bottomNavigationBar: isDesktop ? null : _buildBottomNavBar(),
       body: SingleChildScrollView(
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
@@ -194,8 +245,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               flex: 2,
               child: ElevatedButton.icon(
                 onPressed: () {
-                  Navigator.push(
-                    context,
+                  Navigator.push(context, 
                     MaterialPageRoute(
                       builder: (context) => CheckoutScreen(
                         productName: widget.product.name,
@@ -219,8 +269,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               flex: 2,
               child: ElevatedButton.icon(
                 onPressed: () {
-                  Navigator.push(
-                    context,
+                  Navigator.push(context, 
                     MaterialPageRoute(
                       builder: (context) => ChatDetailScreen(
                         otherUserId: widget.product.sellerId,
@@ -247,8 +296,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 shape: BoxShape.circle,
               ),
               child: IconButton(
-                icon: Icon(Icons.favorite_border, color: context.colors.textPrimary),
-                onPressed: () {},
+                icon: Icon(
+                  _isWishlisted ? Icons.favorite : Icons.favorite_border,
+                  color: _isWishlisted ? Colors.red : context.colors.textPrimary
+                ),
+                onPressed: _isLoadingWishlist ? null : _toggleWishlist,
               ),
             )
           ],
@@ -555,11 +607,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           _buildAppBarTab("Services", icon: Icons.build_circle_outlined),
           SizedBox(width: 16),
           _buildAppBarTab("Chat", icon: Icons.chat_bubble_outline, onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => ChatListScreen()));
+            Navigator.push(context,  MaterialPageRoute(builder: (context) => ChatListScreen()));
           }),
           SizedBox(width: 32),
           IconButton(icon: Icon(Icons.light_mode_outlined, color: Colors.grey, size: 20), onPressed: () {}),
-          IconButton(icon: Icon(Icons.favorite_border, color: Colors.grey, size: 20), onPressed: () {}),
+          IconButton(icon: Icon(Icons.favorite_border, color: Colors.grey, size: 20), onPressed: () {
+            Navigator.push(context,  MaterialPageRoute(builder: (context) => WishlistScreen()));
+          }),
           IconButton(icon: Icon(Icons.shopping_cart_outlined, color: Colors.grey, size: 20), onPressed: () {}),
         ] else ...[
           IconButton(icon: Icon(Icons.light_mode_outlined, color: Colors.grey, size: 20), onPressed: () {}),
@@ -569,7 +623,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             backgroundColor: Colors.red,
             child: Icon(Icons.notifications_none, color: Colors.grey, size: 20),
           ),
-          onPressed: () {},
+          onPressed: () {
+            Navigator.push(context,  MaterialPageRoute(builder: (context) => const NotificationScreen()));
+          },
         ),
         if (isDesktop) SizedBox(width: 16),
         if (isDesktop)
@@ -647,7 +703,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             _buildBottomNavIcon(Icons.storefront, "Home", isActive: true),
             _buildBottomNavIcon(Icons.build_circle_outlined, "Services"),
             _buildBottomNavIcon(Icons.chat_bubble_outline, "Chat", onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => ChatListScreen()));
+              Navigator.push(context,  MaterialPageRoute(builder: (context) => ChatListScreen()));
             }),
             _buildBottomNavIcon(Icons.shopping_cart_outlined, "Cart"),
             _buildBottomNavIcon(Icons.person_outline, "Profile"),

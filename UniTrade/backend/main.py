@@ -155,6 +155,17 @@ def init_db():
             FOREIGN KEY(product_id) REFERENCES products(id)
         )
     ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS notifications (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            title TEXT,
+            message TEXT,
+            is_read BOOLEAN DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(user_id) REFERENCES users(id)
+        )
+    ''')
     
     # Check if empty to seed data
     cursor.execute("SELECT COUNT(*) FROM users")
@@ -178,6 +189,12 @@ def init_db():
             (user_id, "Jasa Desain Poster / UI UX", "Bisa desain pakai Figma atau Canva.", "Desain", 50000, "", "APPROVED")
         ]
         cursor.executemany("INSERT INTO services (seller_id, title, description, category, price, image_url, approval_status) VALUES (?, ?, ?, ?, ?, ?, ?)", dummy_services)
+        
+        dummy_notifications = [
+            (user_id, "Welcome to UniTrade!", "Selamat datang di UniTrade! Temukan barang dan jasa dari teman kampusmu di sini.", 0),
+            (user_id, "Tips Berjualan", "Lengkapi profil dan foto barang jualanmu agar lebih menarik pembeli ya!", 0)
+        ]
+        cursor.executemany("INSERT INTO notifications (user_id, title, message, is_read) VALUES (?, ?, ?, ?)", dummy_notifications)
         conn.commit()
     conn.close()
 
@@ -554,6 +571,104 @@ async def user_profile(request: Request):
     if user:
         return dict(user)
     raise HTTPException(status_code=404, detail="User not found")
+
+# WISHLIST ENDPOINTS
+@app.get("/wishlist")
+async def get_wishlist(request: Request):
+    current_user = get_current_user(request)
+    conn = sqlite3.connect(DB_FILE)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT p.*, u.name as seller_name, u.campus as seller_campus 
+        FROM wishlists w
+        JOIN products p ON w.product_id = p.id
+        JOIN users u ON p.seller_id = u.id
+        WHERE w.user_id = ?
+        ORDER BY w.created_at DESC
+    ''', (current_user["user_id"],))
+    rows = cursor.fetchall()
+    conn.close()
+
+    results = []
+    for row in rows:
+        results.append({
+            "id": row["id"],
+            "seller_id": row["seller_id"],
+            "seller_name": row["seller_name"],
+            "seller_campus": row["seller_campus"],
+            "name": row["name"],
+            "description": row["description"],
+            "price": row["price"],
+            "category": row["category"],
+            "condition": row["condition"],
+            "campus": row["campus"],
+            "tags": json.loads(row["tags"]) if row["tags"] else [],
+            "image_url": row["image_url"]
+        })
+
+    return results
+
+@app.post("/wishlist/{product_id}")
+async def toggle_wishlist(request: Request, product_id: int):
+    current_user = get_current_user(request)
+    user_id = current_user["user_id"]
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    
+    # Check if already exists
+    cursor.execute("SELECT id FROM wishlists WHERE user_id = ? AND product_id = ?", (user_id, product_id))
+    existing = cursor.fetchone()
+    
+    if existing:
+        cursor.execute("DELETE FROM wishlists WHERE id = ?", (existing[0],))
+        status = "removed"
+    else:
+        cursor.execute("INSERT INTO wishlists (user_id, product_id) VALUES (?, ?)", (user_id, product_id))
+        status = "added"
+        
+    conn.commit()
+    conn.close()
+    return {"status": status}
+
+@app.get("/wishlist/{product_id}/check")
+async def check_wishlist(request: Request, product_id: int):
+    current_user = get_current_user(request)
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute("SELECT id FROM wishlists WHERE user_id = ? AND product_id = ?", (current_user["user_id"], product_id))
+    existing = cursor.fetchone()
+    conn.close()
+    return {"is_wishlisted": bool(existing)}
+
+# NOTIFICATIONS ENDPOINTS
+@app.get("/notifications")
+async def get_notifications(request: Request):
+    current_user = get_current_user(request)
+    conn = sqlite3.connect(DB_FILE)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT * FROM notifications 
+        WHERE user_id = ? 
+        ORDER BY created_at DESC
+    ''', (current_user["user_id"],))
+    notifs = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    return notifs
+
+@app.post("/notifications/{notif_id}/read")
+async def read_notification(request: Request, notif_id: int):
+    current_user = get_current_user(request)
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute('''
+        UPDATE notifications SET is_read = 1 
+        WHERE id = ? AND user_id = ?
+    ''', (notif_id, current_user["user_id"]))
+    conn.commit()
+    conn.close()
+    return {"status": "success"}
 
 # ADMIN ENDPOINTS
 

@@ -7,6 +7,8 @@ import 'product_detail_screen.dart';
 import 'sell_item_screen.dart';
 import 'auth_service.dart';
 import 'chat_list_screen.dart';
+import 'wishlist_screen.dart';
+import 'notification_screen.dart';
 
 class CurrencyInputFormatter extends TextInputFormatter {
   @override
@@ -295,11 +297,13 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
           _buildAppBarTab("Services", icon: Icons.build_circle_outlined),
           SizedBox(width: 16),
           _buildAppBarTab("Chat", icon: Icons.chat_bubble_outline, onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => ChatListScreen()));
+            Navigator.push(context,  MaterialPageRoute(builder: (context) => ChatListScreen()));
           }),
           SizedBox(width: 32),
           ValueListenableBuilder<ThemeMode>(valueListenable: ThemeManager.themeNotifier, builder: (_, mode, _) { return IconButton(icon: Icon(mode == ThemeMode.dark ? Icons.light_mode_outlined : Icons.dark_mode_outlined, color: context.colors.primary, size: 20), onPressed: () { ThemeManager.toggleTheme(); }); }),
-          IconButton(icon: Icon(Icons.favorite_border, color: Colors.grey, size: 20), onPressed: () {}),
+          IconButton(icon: Icon(Icons.favorite_border, color: Colors.grey, size: 20), onPressed: () {
+            Navigator.push(context,  MaterialPageRoute(builder: (context) => const WishlistScreen()));
+          }),
           IconButton(icon: Icon(Icons.shopping_cart_outlined, color: Colors.grey, size: 20), onPressed: () {}),
         ] else ...[
           ValueListenableBuilder<ThemeMode>(valueListenable: ThemeManager.themeNotifier, builder: (_, mode, _) { return IconButton(icon: Icon(mode == ThemeMode.dark ? Icons.light_mode_outlined : Icons.dark_mode_outlined, color: context.colors.primary, size: 20), onPressed: () { ThemeManager.toggleTheme(); }); }),
@@ -309,7 +313,9 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
             backgroundColor: Colors.red,
             child: Icon(Icons.notifications_none, color: Colors.grey, size: 20),
           ),
-          onPressed: () {},
+          onPressed: () {
+            Navigator.push(context,  MaterialPageRoute(builder: (context) => const NotificationScreen()));
+          },
         ),
         if (isDesktop) SizedBox(width: 16),
         if (isDesktop)
@@ -387,7 +393,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
             _buildBottomNavIcon(Icons.storefront, "Home", isActive: true),
             _buildBottomNavIcon(Icons.build_circle_outlined, "Services"),
             _buildBottomNavIcon(Icons.chat_bubble_outline, "Chat", onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => ChatListScreen()));
+              Navigator.push(context,  MaterialPageRoute(builder: (context) => ChatListScreen()));
             }),
             _buildBottomNavIcon(Icons.shopping_cart_outlined, "Cart"),
             _buildBottomNavIcon(Icons.person_outline, "Profile"),
@@ -441,8 +447,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
         ),
         ElevatedButton.icon(
           onPressed: () async {
-            final result = await Navigator.push(
-              context,
+            final result = await Navigator.push(context, 
               MaterialPageRoute(builder: (context) => SellItemScreen()),
             );
             if (result == true) {
@@ -887,8 +892,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
 
     return InkWell(
       onTap: () {
-        Navigator.push(
-          context,
+        Navigator.push(context, 
           MaterialPageRoute(
             builder: (context) => ProductDetailScreen(product: product),
           ),
