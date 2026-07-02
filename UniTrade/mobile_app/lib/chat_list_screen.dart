@@ -1,3 +1,4 @@
+﻿import 'theme.dart';
 import 'package:flutter/material.dart';
 import 'chat_service.dart';
 import 'chat_detail_screen.dart';
@@ -21,46 +22,45 @@ class _ChatListScreenState extends State<ChatListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F0F11),
+      backgroundColor: context.colors.background,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1E1E22),
-        title: const Text("Pesan", style: TextStyle(color: Colors.white)),
-        iconTheme: const IconThemeData(color: Colors.white),
+        backgroundColor: context.colors.cardBg,
+        title: Text("Pesan", style: TextStyle(color: context.colors.textPrimary)),
+        iconTheme: IconThemeData(color: context.colors.textPrimary),
       ),
       body: FutureBuilder<List<dynamic>>(
         future: _chatsFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: Color(0xFFE67E22)));
+            return Center(child: CircularProgressIndicator(color: context.colors.primary));
           } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}', style: const TextStyle(color: Colors.red)));
+            return Center(child: Text('Error: ${snapshot.error}', style: TextStyle(color: Colors.red)));
           } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text("Belum ada obrolan.", style: TextStyle(color: Colors.grey)));
+            return Center(child: Text("Belum ada obrolan.", style: TextStyle(color: Colors.grey)));
           }
 
           final chats = snapshot.data!;
           return ListView.separated(
             itemCount: chats.length,
-            separatorBuilder: (context, index) => Divider(color: Colors.grey.withOpacity(0.2)),
+            separatorBuilder: (context, index) => Divider(color: Colors.grey.withValues(alpha: 0.2)),
             itemBuilder: (context, index) {
               final chat = chats[index];
               return ListTile(
-                leading: const CircleAvatar(
+                leading: CircleAvatar(
                   backgroundColor: Color(0xFF2A2A30),
                   child: Icon(Icons.person, color: Colors.grey),
                 ),
-                title: Text(chat['other_user_name'] ?? 'Unknown', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                title: Text(chat['other_user_name'] ?? 'Unknown', style: TextStyle(color: context.colors.textPrimary, fontWeight: FontWeight.bold)),
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(chat['product_name'] ?? 'Barang', style: const TextStyle(color: Color(0xFFE67E22), fontSize: 12)),
-                    Text(chat['last_message'] ?? '', style: const TextStyle(color: Colors.grey), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    Text(chat['product_name'] ?? 'Barang', style: TextStyle(color: context.colors.primary, fontSize: 12)),
+                    Text(chat['last_message'] ?? '', style: TextStyle(color: Colors.grey), maxLines: 1, overflow: TextOverflow.ellipsis),
                   ],
                 ),
                 isThreeLine: true,
                 onTap: () {
-                  Navigator.push(
-                    context,
+                  Navigator.push(context, 
                     MaterialPageRoute(
                       builder: (context) => ChatDetailScreen(
                         otherUserId: chat['other_user_id'],

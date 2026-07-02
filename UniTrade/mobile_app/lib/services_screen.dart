@@ -1,17 +1,16 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'theme.dart';
 import 'package:flutter/services.dart';
-import 'dart:ui';
+import 'theme.dart';
 import 'package:http/http.dart' as http;
-import 'product_detail_screen.dart';
+import 'sell_service_screen.dart';
 import 'sell_item_screen.dart';
 import 'auth_service.dart';
 import 'chat_list_screen.dart';
+import 'marketplace_screen.dart'; 
+import 'service_detail_screen.dart';
 import 'wishlist_screen.dart';
 import 'notification_screen.dart';
-import 'services_screen.dart' hide formatCurrency, CurrencyInputFormatter;
-import 'service_detail_screen.dart';
 
 class CurrencyInputFormatter extends TextInputFormatter {
   @override
@@ -35,72 +34,64 @@ String formatCurrency(int value) {
   return value.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.');
 }
 
-class Product {
+class ServiceItem {
   final int id;
   final int sellerId;
   final String sellerName;
   final String sellerCampus;
-  final String name;
+  final String title;
   final String description;
-  final int price;
   final String category;
-  final String condition;
-  final String campus;
-  final List<String> tags;
+  final int price;
+  final int? maxPrice;
+  final String? campus;
+  final String? meetupLocation;
   final String imageUrl;
-  final String itemType;
-  final Map<String, dynamic> advancedDetails;
 
-  Product({
+  ServiceItem({
     required this.id,
     required this.sellerId,
     required this.sellerName,
     required this.sellerCampus,
-    required this.name,
+    required this.title,
     required this.description,
-    required this.price,
     required this.category,
-    required this.condition,
-    required this.campus,
-    required this.tags,
+    required this.price,
+    this.maxPrice,
+    this.campus,
+    this.meetupLocation,
     required this.imageUrl,
-    required this.itemType,
-    required this.advancedDetails,
   });
 
-  factory Product.fromJson(Map<String, dynamic> json) {
-    return Product(
+  factory ServiceItem.fromJson(Map<String, dynamic> json) {
+    return ServiceItem(
       id: json['id'] ?? 0,
       sellerId: json['seller_id'] ?? 0,
       sellerName: json['seller_name'] ?? 'Unknown Seller',
       sellerCampus: json['seller_campus'] ?? 'Unknown Campus',
-      name: json['name'] ?? '',
+      title: json['title'] ?? '',
       description: json['description'] ?? '',
-      price: json['price'] ?? 0,
       category: json['category'] ?? '',
-      condition: json['condition'] ?? '',
-      campus: json['campus'] ?? '',
-      tags: List<String>.from(json['tags'] ?? []),
+      price: json['price'] ?? 0,
+      maxPrice: json['max_price'],
+      campus: json['campus'],
+      meetupLocation: json['meetup_location'],
       imageUrl: json['image_url'] ?? '',
-      itemType: json['item_type'] ?? 'Barang',
-      advancedDetails: json['advanced_details'] ?? {},
     );
   }
 }
 
-class MarketplaceScreen extends StatefulWidget {
+class ServicesScreen extends StatefulWidget {
   final bool showWelcome;
 
-  const MarketplaceScreen({super.key, this.showWelcome = false});
-
-  static final ValueNotifier<bool> refreshNotifier = ValueNotifier(false);
+  const ServicesScreen({super.key, this.showWelcome = false});
 
   @override
-  State<MarketplaceScreen> createState() => _MarketplaceScreenState();
+  State<ServicesScreen> createState() => _ServicesScreenState();
 }
 
-class _MarketplaceScreenState extends State<MarketplaceScreen> {
-  late Future<List<Product>> _productsFuture;
+class _ServicesScreenState extends State<ServicesScreen> {
+  late Future<List<ServiceItem>> _servicesFuture;
 
   // Filter States
   final TextEditingController _searchController = TextEditingController();
@@ -108,20 +99,12 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
   final TextEditingController _maxPriceController = TextEditingController();
 
   String _selectedCategory = 'Semua Kategori';
-  final List<String> _categories = ['Semua Kategori', 'Elektronik', 'Pakaian', 'Otomotif', 'Jasa'];
-
-  String _selectedCondition = 'Semua Kondisi';
-  final List<String> _conditions = [
-    'Semua Kondisi',
-    'Baru (Brand New)',
-    'Mulus (Like New)',
-    'Pemakaian Wajar (Fair/Used)'
-  ];
+  final List<String> _categories = ['Semua Kategori', 'Desain', 'IT Support', 'Tutor', 'Writing', 'Lainnya'];
   
   // Location Filter
   bool _includeAllJabodetabek = true;
   String _selectedJabodetabekCampus = 'Pilih Kampus';
-  List<String> _jabodetabekCampuses = [
+  final List<String> _jabodetabekCampuses = [
     'Pilih Kampus',
     'Universitas Nasional - Jakarta Selatan, Pasar Minggu',
     'Universitas Indonesia - Depok, Beji',
@@ -133,28 +116,19 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
   @override
   void initState() {
     super.initState();
-    _productsFuture = fetchProducts();
+    _servicesFuture = fetchServices();
     _showWelcomeMessage = widget.showWelcome;
-    fetchCampuses();
-    MarketplaceScreen.refreshNotifier.addListener(_onRefreshNotifierChanged);
-  }
-
-  void _onRefreshNotifierChanged() {
-    if (mounted) {
-      _applyFilters();
-    }
   }
 
   @override
   void dispose() {
-    MarketplaceScreen.refreshNotifier.removeListener(_onRefreshNotifierChanged);
     _searchController.dispose();
     _minPriceController.dispose();
     _maxPriceController.dispose();
     super.dispose();
   }
 
-  Future<List<Product>> fetchProducts() async {
+  Future<List<ServiceItem>> fetchServices() async {
     try {
       // Build query parameters
       Map<String, String> queryParams = {};
@@ -163,9 +137,6 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
       }
       if (_selectedCategory != 'Semua Kategori') {
         queryParams['category'] = _selectedCategory;
-      }
-      if (_selectedCondition != 'Semua Kondisi') {
-        queryParams['condition'] = _selectedCondition;
       }
       if (_minPriceController.text.isNotEmpty) {
         queryParams['min_price'] = _minPriceController.text.replaceAll(RegExp(r'[^0-9]'), '');
@@ -176,54 +147,33 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
       if (!_includeAllJabodetabek && _selectedJabodetabekCampus != 'Pilih Kampus') {
         queryParams['campus'] = _selectedJabodetabekCampus;
       }
-      final uri = Uri.http('192.168.110.199:8000', '/products', queryParams);
+
+      final baseUrlUri = Uri.parse(AuthService.baseUrl);
+      final uri = Uri(
+        scheme: baseUrlUri.scheme,
+        host: baseUrlUri.host,
+        port: baseUrlUri.port,
+        path: '/services',
+        queryParameters: queryParams.isEmpty ? null : queryParams,
+      );
 
       final response = await http.get(uri).timeout(Duration(seconds: 5));
 
       if (response.statusCode == 200) {
         List jsonResponse = json.decode(response.body);
-        return jsonResponse.map((product) => Product.fromJson(product)).toList();
+        return jsonResponse.map((s) => ServiceItem.fromJson(s)).toList();
       } else {
-        throw Exception('Gagal memuat produk');
+        throw Exception('Gagal memuat services');
       }
     } catch (e) {
-      // Return dummy data fallback if backend fails
       return [];
-    }
-  }
-
-  Future<void> fetchCampuses() async {
-    try {
-      final uri = Uri.http('192.168.110.199:8000', '/campuses');
-      final response = await http.get(uri).timeout(const Duration(seconds: 5));
-      if (response.statusCode == 200) {
-        List jsonResponse = json.decode(response.body);
-        setState(() {
-          final Set<String> campusSet = {'Pilih Kampus'};
-          campusSet.addAll(_jabodetabekCampuses);
-          for (var c in jsonResponse) {
-            campusSet.add(c.toString());
-          }
-          _jabodetabekCampuses = campusSet.toList();
-        });
-      }
-    } catch (e) {
-      // Ignored
     }
   }
 
   void _applyFilters() {
     setState(() {
-      _productsFuture = fetchProducts();
+      _servicesFuture = fetchServices();
     });
-  }
-
-  Future<void> _refreshData() async {
-    setState(() {
-      _productsFuture = fetchProducts();
-    });
-    await fetchCampuses();
-    await _productsFuture;
   }
 
   String get _welcomeName {
@@ -239,17 +189,16 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
     final bool isDesktop = MediaQuery.of(context).size.width > 800;
 
     return Scaffold(
-      backgroundColor: context.bgColor,
-      extendBody: true, // Make body extend behind bottom navbar
+      backgroundColor: context.colors.background,
       appBar: _buildAppBar(isDesktop),
-
       body: RefreshIndicator(
-        color: const Color(0xFFE67E22),
-        backgroundColor: context.surfaceColor,
-        onRefresh: _refreshData,
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          child: Padding(
+        onRefresh: () async {
+          setState(() {
+            _servicesFuture = fetchServices();
+          });
+        },
+        child: SingleChildScrollView(physics: const AlwaysScrollableScrollPhysics(), 
+        child: Padding(
           padding: EdgeInsets.all(24.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -260,16 +209,15 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                   padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   margin: EdgeInsets.only(bottom: 24),
                   decoration: BoxDecoration(
-                    color: context.surfaceColor,
+                    color: context.colors.textPrimary,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: context.colors.border),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        "Selamat datang, $_welcomeName 😊",
-                        style: TextStyle(color: context.textColor, fontWeight: FontWeight.bold),
+                        "Selamat datang, $_welcomeName ðŸ˜Š",
+                        style: TextStyle(color: context.colors.background, fontWeight: FontWeight.bold),
                       ),
                       InkWell(
                         onTap: () {
@@ -277,14 +225,12 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                             _showWelcomeMessage = false;
                           });
                         },
-                        child: Icon(Icons.close, color: context.textMuted, size: 18),
+                        child: Icon(Icons.close, color: context.colors.background.withValues(alpha: 0.54), size: 18),
                       )
                     ],
                   ),
                 ),
               _buildHeaderSection(),
-              SizedBox(height: 24),
-              _buildPromoBanner(),
               SizedBox(height: 32),
               isDesktop
                   ? Row(
@@ -296,18 +242,15 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                         ),
                         SizedBox(width: 32),
                         Expanded(
-                          child: _buildProductGrid(isDesktop),
+                          child: _buildServiceGrid(isDesktop),
                         ),
                       ],
                     )
                   : Column(
                       children: [
                         _buildMobileSearchBar(),
-                        SizedBox(height: 16),
-                        _buildQuickCategoryChips(),
                         SizedBox(height: 24),
-                        _buildProductGrid(isDesktop),
-                        SizedBox(height: 100), // Padding for transparent navbar
+                        _buildServiceGrid(isDesktop),
                       ],
                     ),
             ],
@@ -320,7 +263,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
 
   AppBar _buildAppBar(bool isDesktop) {
     return AppBar(
-      backgroundColor: context.bgColor,
+      backgroundColor: context.colors.background,
       elevation: 0,
       title: Row(
         children: [
@@ -334,29 +277,23 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
       ),
       actions: [
         if (isDesktop) ...[
-          _buildAppBarTab("Marketplace", isActive: true, icon: Icons.storefront),
+          _buildAppBarTab("Marketplace", icon: Icons.storefront, onTap: () {
+            Navigator.pushReplacement(context,  MaterialPageRoute(builder: (context) => MarketplaceScreen()));
+          }),
           SizedBox(width: 16),
-          _buildAppBarTab("Services", icon: Icons.build_circle_outlined),
+          _buildAppBarTab("Services", isActive: true, icon: Icons.build_circle_outlined),
           SizedBox(width: 16),
           _buildAppBarTab("Chat", icon: Icons.chat_bubble_outline, onTap: () {
             Navigator.push(context,  MaterialPageRoute(builder: (context) => ChatListScreen()));
           }),
           SizedBox(width: 32),
-          IconButton(
-            icon: Icon(context.isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined, color: Colors.grey, size: 20),
-            onPressed: () {
-              themeNotifier.value = context.isDark ? ThemeMode.light : ThemeMode.dark;
-            },
-          ),
-          IconButton(icon: Icon(Icons.favorite_border, color: Colors.grey, size: 20), onPressed: () {}),
+          ValueListenableBuilder<ThemeMode>(valueListenable: ThemeManager.themeNotifier, builder: (_, mode, _) { return IconButton(icon: Icon(mode == ThemeMode.dark ? Icons.light_mode_outlined : Icons.dark_mode_outlined, color: context.colors.primary, size: 20), onPressed: () { ThemeManager.toggleTheme(); }); }),
+          IconButton(icon: Icon(Icons.favorite_border, color: Colors.grey, size: 20), onPressed: () {
+            Navigator.push(context,  MaterialPageRoute(builder: (context) => WishlistScreen()));
+          }),
           IconButton(icon: Icon(Icons.shopping_cart_outlined, color: Colors.grey, size: 20), onPressed: () {}),
         ] else ...[
-          IconButton(
-            icon: Icon(context.isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined, color: Colors.grey, size: 20),
-            onPressed: () {
-              themeNotifier.value = context.isDark ? ThemeMode.light : ThemeMode.dark;
-            },
-          ),
+          ValueListenableBuilder<ThemeMode>(valueListenable: ThemeManager.themeNotifier, builder: (_, mode, _) { return IconButton(icon: Icon(mode == ThemeMode.dark ? Icons.light_mode_outlined : Icons.dark_mode_outlined, color: context.colors.primary, size: 20), onPressed: () { ThemeManager.toggleTheme(); }); }),
         ],
         IconButton(
           icon: Badge(
@@ -372,24 +309,24 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
           Container(
             padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: context.surfaceColor,
+              color: context.colors.cardBg,
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: context.textColor.withOpacity(0.1)),
+              border: Border.all(color: context.colors.textPrimary.withValues(alpha: 0.1)),
             ),
             child: Row(
               children: [
                 CircleAvatar(
                   radius: 12,
                   backgroundColor: Colors.grey,
-                  child: Icon(Icons.person, size: 16, color: context.textColor),
+                  child: Icon(Icons.person, size: 16, color: context.colors.textPrimary),
                 ),
                 SizedBox(width: 8),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(AuthService.currentUser?['name'] ?? "Guest", style: TextStyle(color: context.textColor, fontSize: 12, fontWeight: FontWeight.bold)),
-                    Text("120 pts", style: TextStyle(color: Color(0xFFE67E22), fontSize: 10)),
+                    Text(AuthService.currentUser?['name'] ?? "Guest", style: TextStyle(color: context.colors.textPrimary, fontSize: 12, fontWeight: FontWeight.bold)),
+                    Text("120 pts", style: TextStyle(color: context.colors.primary, fontSize: 10)),
                   ],
                 ),
                 SizedBox(width: 8),
@@ -408,12 +345,12 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isActive ? Color(0xFFE67E22).withOpacity(0.2) : Colors.transparent,
+          color: isActive ? context.colors.primary.withValues(alpha: 0.2) : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
           children: [
-            Icon(icon, color: isActive ? const Color(0xFFE67E22) : Colors.grey, size: 16),
+            Icon(icon, color: isActive ? context.colors.primary : Colors.grey, size: 16),
             SizedBox(width: 6),
             Text(
               title,
@@ -429,59 +366,6 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
     );
   }
 
-  Widget _buildBottomNavBar() {
-    return Container(
-      padding: EdgeInsets.only(top: 32, bottom: 12),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Colors.transparent,
-            context.bgColor.withOpacity(0.85),
-            context.bgColor,
-          ],
-          stops: [0.0, 0.4, 1.0],
-        ),
-      ),
-      child: SafeArea(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _buildBottomNavIcon(Icons.storefront, "Home", isActive: true),
-            _buildBottomNavIcon(Icons.build_circle_outlined, "Services"),
-            _buildBottomNavIcon(Icons.chat_bubble_outline, "Chat", onTap: () {
-              Navigator.push(context,  MaterialPageRoute(builder: (context) => ChatListScreen()));
-            }),
-            _buildBottomNavIcon(Icons.shopping_cart_outlined, "Cart"),
-            _buildBottomNavIcon(Icons.person_outline, "Profile"),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBottomNavIcon(IconData icon, String label, {bool isActive = false, VoidCallback? onTap}) {
-    return InkWell(
-      onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: isActive ? const Color(0xFFE67E22) : Colors.grey, size: 24),
-          SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              color: isActive ? context.colors.primary : Colors.grey,
-              fontSize: 10,
-              fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildHeaderSection() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -492,51 +376,79 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                "Campus Marketplace",
-                style: TextStyle(color: context.textColor, fontSize: 28, fontWeight: FontWeight.bold),
+                "Campus Services",
+                style: TextStyle(color: context.colors.textPrimary, fontSize: 28, fontWeight: FontWeight.bold),
               ),
               SizedBox(height: 8),
               Text(
-                "Buy and sell textbooks, electronics, and dorm gear within your university zone.",
+                "Find student freelancers and services within your university zone.",
                 style: TextStyle(color: Colors.grey[400], fontSize: 14),
               ),
             ],
           ),
         ),
-      ],
-    );
-  }
-
-  Widget _buildPromoBanner() {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFE67E22), Color(0xFFD35400)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+        ElevatedButton.icon(
+          onPressed: () {
+            showModalBottomSheet(
+              context: context,
+              backgroundColor: context.bgColor,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+              builder: (BuildContext context) {
+                return Padding(
+                  padding: EdgeInsets.only(top: 24, left: 16, right: 16, bottom: 100),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text("What would you like to list?", style: TextStyle(color: context.colors.textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
+                      SizedBox(height: 16),
+                      ListTile(
+                        leading: Container(
+                          padding: EdgeInsets.all(8),
+                          decoration: BoxDecoration(color: context.colors.primary.withValues(alpha: 0.1), shape: BoxShape.circle),
+                          child: Icon(Icons.storefront, color: context.colors.primary),
+                        ),
+                        title: Text('Sell An Item', style: TextStyle(color: context.colors.textPrimary, fontWeight: FontWeight.bold)),
+                        subtitle: Text('List a physical product for sale', style: TextStyle(color: context.colors.textMuted, fontSize: 12)),
+                        onTap: () async {
+                          Navigator.pop(context);
+                          final result = await Navigator.push(context, MaterialPageRoute(builder: (context) => SellItemScreen()));
+                          if (result == true) {
+                            MarketplaceScreen.refreshNotifier.value = !MarketplaceScreen.refreshNotifier.value;
+                          }
+                        },
+                      ),
+                      Divider(color: context.colors.border),
+                      ListTile(
+                        leading: Container(
+                          padding: EdgeInsets.all(8),
+                          decoration: BoxDecoration(color: const Color(0xFFE67E22).withValues(alpha: 0.1), shape: BoxShape.circle),
+                          child: Icon(Icons.build_circle_outlined, color: const Color(0xFFE67E22)),
+                        ),
+                        title: Text('Offer A Service', style: TextStyle(color: context.colors.textPrimary, fontWeight: FontWeight.bold)),
+                        subtitle: Text('List your skills or freelance services', style: TextStyle(color: context.colors.textMuted, fontSize: 12)),
+                        onTap: () async {
+                          Navigator.pop(context);
+                          final result = await Navigator.push(context, MaterialPageRoute(builder: (context) => SellServiceScreen()));
+                          if (result == true) {
+                            _applyFilters();
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                );
+              },
+            );
+          },
+          icon: Icon(Icons.add, color: context.colors.textPrimary, size: 18),
+          label: Text("Add Listing", style: TextStyle(color: context.colors.textPrimary, fontWeight: FontWeight.bold)),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: context.colors.primary,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          ),
         ),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text("Back to Campus Sale! 🎓", style: TextStyle(color: context.textColor, fontSize: 18, fontWeight: FontWeight.bold)),
-          SizedBox(height: 8),
-          Text("Get up to 50% off on textbooks and electronics this week.", style: TextStyle(color: context.textColor, fontSize: 13)),
-          SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: () {},
-            style: ElevatedButton.styleFrom(
-              backgroundColor: context.textColor,
-              foregroundColor: const Color(0xFFE67E22),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            ),
-            child: Text("Shop Now", style: TextStyle(fontWeight: FontWeight.bold)),
-          )
-        ],
-      ),
+      ],
     );
   }
 
@@ -547,12 +459,12 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
           child: TextField(
             controller: _searchController,
             onSubmitted: (_) => _applyFilters(),
-            style: TextStyle(color: context.textColor, fontSize: 13),
+            style: TextStyle(color: context.colors.textPrimary, fontSize: 13),
             decoration: InputDecoration(
-              hintText: "Search for laptops, books, etc...",
+              hintText: "Search for design, tutoring, etc...",
               hintStyle: TextStyle(color: Colors.grey[600], fontSize: 13),
               filled: true,
-              fillColor: context.surfaceColor,
+              fillColor: context.colors.cardBg,
               prefixIcon: Icon(Icons.search, color: Colors.grey, size: 20),
               contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
@@ -568,48 +480,17 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
               color: context.colors.primary,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(Icons.tune, color: context.textColor, size: 20),
+            child: Icon(Icons.tune, color: context.colors.textPrimary, size: 20),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildQuickCategoryChips() {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      physics: const BouncingScrollPhysics(),
-      child: Row(
-        children: _categories.map((category) {
-          bool isSelected = _selectedCategory == category;
-          return Padding(
-            padding: EdgeInsets.only(right: 8.0),
-            child: ChoiceChip(
-              label: Text(category, style: TextStyle(color: isSelected ? context.textColor : Colors.grey[400], fontSize: 13)),
-              selected: isSelected,
-              selectedColor: const Color(0xFFE67E22),
-              backgroundColor: context.surfaceColor,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-                side: BorderSide(color: isSelected ? const Color(0xFFE67E22) : Colors.transparent),
-              ),
-              onSelected: (bool selected) {
-                setState(() {
-                  _selectedCategory = category;
-                  _applyFilters();
-                });
-              },
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-
   void _showMobileFilterSheet() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: context.surfaceHighlight,
+      backgroundColor: context.colors.cardBg,
       isScrollControlled: true,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -638,13 +519,10 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                       ),
                     ),
                     SizedBox(height: 24),
-                    Text("FILTERS", style: TextStyle(color: context.textColor, fontSize: 16, fontWeight: FontWeight.bold)),
+                    Text("FILTERS", style: TextStyle(color: context.colors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold)),
                     SizedBox(height: 24),
                     _buildFilterLabel("CATEGORY"),
                     _buildDropdownCategory(setModalState),
-                    SizedBox(height: 20),
-                    _buildFilterLabel("CONDITION"),
-                    _buildDropdownCondition(setModalState),
                     SizedBox(height: 20),
                     _buildFilterLabel("PRICE RANGE (RP)"),
                     Row(
@@ -674,7 +552,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                         Expanded(
                           child: Text(
                             "Include all campus at Jabodetabek area",
-                            style: TextStyle(color: context.textColor, fontSize: 13),
+                            style: TextStyle(color: context.colors.textPrimary, fontSize: 13),
                           ),
                         ),
                       ],
@@ -683,16 +561,16 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                     Container(
                       padding: EdgeInsets.symmetric(horizontal: 12),
                       decoration: BoxDecoration(
-                        color: context.surfaceColor,
+                        color: context.colors.cardBg,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<String>(
                           value: _selectedJabodetabekCampus,
                           isExpanded: true,
-                          dropdownColor: context.surfaceColor,
+                          dropdownColor: context.colors.cardBg,
                           icon: Icon(Icons.keyboard_arrow_down, color: Colors.grey, size: 16),
-                          style: TextStyle(color: context.textColor, fontSize: 12),
+                          style: TextStyle(color: context.colors.textPrimary, fontSize: 12),
                           onChanged: (String? newValue) {
                             setModalState(() {
                               _selectedJabodetabekCampus = newValue!;
@@ -713,45 +591,20 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                       ),
                     ),
                     SizedBox(height: 32),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: () {
-                              setModalState(() {
-                                _selectedCategory = 'Semua Kategori';
-                                _selectedCondition = 'Semua Kondisi';
-                                _minPriceController.clear();
-                                _maxPriceController.clear();
-                                _includeAllJabodetabek = true;
-                                _selectedJabodetabekCampus = 'Pilih Kampus';
-                              });
-                            },
-                            style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: Color(0xFFE67E22)),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                              padding: EdgeInsets.symmetric(vertical: 16),
-                            ),
-                            child: Text("Reset", style: TextStyle(color: Color(0xFFE67E22), fontWeight: FontWeight.bold)),
-                          ),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          _applyFilters();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: context.colors.primary,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          padding: EdgeInsets.symmetric(vertical: 16),
                         ),
-                        SizedBox(width: 12),
-                        Expanded(
-                          flex: 2,
-                          child: ElevatedButton(
-                            onPressed: () {
-                              Navigator.pop(context);
-                              _applyFilters();
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFE67E22),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                              padding: EdgeInsets.symmetric(vertical: 16),
-                            ),
-                            child: Text("Apply Filters", style: TextStyle(color: context.textColor, fontWeight: FontWeight.bold)),
-                          ),
-                        ),
-                      ],
+                        child: Text("Apply Filters", style: TextStyle(color: context.colors.textPrimary, fontWeight: FontWeight.bold)),
+                      ),
                     ),
                     SizedBox(height: 32),
                   ],
@@ -768,18 +621,18 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
     return Container(
       padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: context.surfaceHighlight,
+        color: context.colors.cardBg,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: context.borderColor),
+        border: Border.all(color: context.colors.textPrimary.withValues(alpha: 0.05)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.filter_list, color: context.textColor, size: 18),
+              Icon(Icons.filter_list, color: context.colors.textPrimary, size: 18),
               SizedBox(width: 8),
-              Text("SEARCH FILTERS", style: TextStyle(color: context.textColor, fontSize: 14, fontWeight: FontWeight.bold)),
+              Text("SEARCH FILTERS", style: TextStyle(color: context.colors.textPrimary, fontSize: 14, fontWeight: FontWeight.bold)),
             ],
           ),
           SizedBox(height: 24),
@@ -788,9 +641,6 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
           SizedBox(height: 20),
           _buildFilterLabel("CATEGORY"),
           _buildDropdownCategory(),
-          SizedBox(height: 20),
-          _buildFilterLabel("CONDITION"),
-          _buildDropdownCondition(),
           SizedBox(height: 20),
           _buildFilterLabel("PRICE RANGE (RP)"),
           Row(
@@ -820,7 +670,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
               Expanded(
                 child: Text(
                   "Include all campus at Jabodetabek area",
-                  style: TextStyle(color: context.textColor, fontSize: 13),
+                  style: TextStyle(color: context.colors.textPrimary, fontSize: 13),
                 ),
               ),
             ],
@@ -829,16 +679,16 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
           Container(
             padding: EdgeInsets.symmetric(horizontal: 12),
             decoration: BoxDecoration(
-              color: context.surfaceColor,
+              color: context.colors.cardBg,
               borderRadius: BorderRadius.circular(8),
             ),
             child: DropdownButtonHideUnderline(
               child: DropdownButton<String>(
                 value: _selectedJabodetabekCampus,
                 isExpanded: true,
-                dropdownColor: context.surfaceColor,
+                dropdownColor: context.colors.cardBg,
                 icon: Icon(Icons.keyboard_arrow_down, color: Colors.grey, size: 16),
-                style: TextStyle(color: context.textColor, fontSize: 12),
+                style: TextStyle(color: context.colors.textPrimary, fontSize: 12),
                 onChanged: (String? newValue) {
                   setState(() {
                     _selectedJabodetabekCampus = newValue!;
@@ -864,8 +714,8 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
             child: ElevatedButton(
               onPressed: _applyFilters,
               style: ElevatedButton.styleFrom(
-                backgroundColor: context.textColor,
-                foregroundColor: Colors.black,
+                backgroundColor: context.colors.textPrimary,
+                foregroundColor: context.colors.background,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                 padding: EdgeInsets.symmetric(vertical: 14),
               ),
@@ -889,12 +739,12 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
       controller: controller,
       keyboardType: isNumber ? TextInputType.number : TextInputType.text,
       inputFormatters: formatters,
-      style: TextStyle(color: context.textColor, fontSize: 13),
+      style: TextStyle(color: context.colors.textPrimary, fontSize: 13),
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: TextStyle(color: Colors.grey[600], fontSize: 13),
         filled: true,
-        fillColor: context.surfaceColor,
+        fillColor: context.colors.cardBg,
         contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
       ),
@@ -905,16 +755,16 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        color: context.surfaceColor,
+        color: context.colors.cardBg,
         borderRadius: BorderRadius.circular(8),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: _selectedCategory,
           isExpanded: true,
-          dropdownColor: context.surfaceColor,
+          dropdownColor: context.colors.cardBg,
           icon: Icon(Icons.keyboard_arrow_down, color: Colors.grey, size: 16),
-          style: TextStyle(color: context.textColor, fontSize: 13),
+          style: TextStyle(color: context.colors.textPrimary, fontSize: 13),
           onChanged: (String? newValue) {
             if (setModalState != null) {
               setModalState(() {
@@ -937,60 +787,24 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
     );
   }
 
-  Widget _buildDropdownCondition([StateSetter? setModalState]) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        color: context.surfaceColor,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: _selectedCondition,
-          isExpanded: true,
-          dropdownColor: context.surfaceColor,
-          icon: Icon(Icons.keyboard_arrow_down, color: Colors.grey, size: 16),
-          style: TextStyle(color: context.textColor, fontSize: 13),
-          onChanged: (String? newValue) {
-            if (setModalState != null) {
-              setModalState(() {
-                _selectedCondition = newValue!;
-              });
-            } else {
-              setState(() {
-                _selectedCondition = newValue!;
-              });
-            }
-          },
-          items: _conditions.map<DropdownMenuItem<String>>((String value) {
-            return DropdownMenuItem<String>(
-              value: value,
-              child: Text(value, overflow: TextOverflow.ellipsis),
-            );
-          }).toList(),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildProductGrid(bool isDesktop) {
-    return FutureBuilder<List<Product>>(
-      future: _productsFuture,
+  Widget _buildServiceGrid(bool isDesktop) {
+    return FutureBuilder<List<ServiceItem>>(
+      future: _servicesFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator(color: Color(0xFFE67E22)));
+          return Center(child: CircularProgressIndicator(color: context.colors.primary));
         } else if (snapshot.hasError) {
           return Center(child: Text("Error: ${snapshot.error}", style: TextStyle(color: Colors.red)));
         }
 
-        final products = snapshot.data ?? [];
+        final services = snapshot.data ?? [];
 
-        if (products.isEmpty) {
+        if (services.isEmpty) {
           return Center(
             child: Padding(
               padding: EdgeInsets.all(32.0),
               child: Text(
-                "Tidak ada produk yang cocok dengan filter pencarian Anda.",
+                "Tidak ada layanan yang cocok dengan filter pencarian Anda.",
                 style: TextStyle(color: Colors.grey, fontSize: 14),
                 textAlign: TextAlign.center,
               ),
@@ -1002,74 +816,31 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
           shrinkWrap: true,
           physics: NeverScrollableScrollPhysics(),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: isDesktop ? 3 : 1, // 3 kolom di desktop, 1 di HP
+            crossAxisCount: isDesktop ? 3 : 1, 
             crossAxisSpacing: 20,
             mainAxisSpacing: 20,
-            childAspectRatio: isDesktop ? 0.85 : 1.5,
+            childAspectRatio: isDesktop ? 0.85 : 1.2,
           ),
-          itemCount: products.length,
+          itemCount: services.length,
           itemBuilder: (context, index) {
-            return _buildProductCard(products[index]);
+            return _buildServiceCard(services[index]);
           },
         );
       },
     );
   }
 
-  Widget _buildProductCard(Product product) {
-    String tag1 = product.tags.isNotEmpty ? product.tags[0] : product.category.toUpperCase();
-    String tag2 = product.tags.length > 1 ? product.tags[1] : 'GOOD';
+  Widget _buildServiceCard(ServiceItem service) {
+    String tag1 = service.category.toUpperCase();
 
     return InkWell(
-      onTap: () async {
-        if (product.itemType == 'Jasa') {
-          ServiceItem service = ServiceItem(
-            id: product.id,
-            sellerId: product.sellerId,
-            sellerName: product.sellerName,
-            sellerCampus: product.sellerCampus,
-            title: product.name,
-            description: product.description,
-            category: product.category,
-            price: product.price,
-            maxPrice: int.tryParse(product.advancedDetails['max_price']?.toString() ?? ''),
-            campus: product.campus,
-            meetupLocation: product.advancedDetails['meetup_location']?.toString(),
-            imageUrl: product.imageUrl,
-          );
-          
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ServiceDetailScreen(service: service),
-            ),
-          );
-          if (result == true) {
-            setState(() {
-              _productsFuture = fetchProducts();
-            });
-          }
-        } else {
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ProductDetailScreen(product: product),
-            ),
-          );
-          if (result == true) {
-            setState(() {
-              _productsFuture = fetchProducts();
-            });
-          }
-        }
+      onTap: () {
+        Navigator.push(context,  MaterialPageRoute(builder: (context) => ServiceDetailScreen(service: service)));
       },
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        decoration: BoxDecoration(
-          color: context.surfaceColor,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: context.borderColor),
-        ),
+      borderRadius: BorderRadius.circular(AppTheme.radiusCard),
+      child: GlassContainer(
+        padding: EdgeInsets.all(0),
+        borderRadius: AppTheme.radiusCard,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1077,26 +848,26 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
             Expanded(
               flex: 4,
               child: Container(
-                decoration: BoxDecoration(color: context.surfaceHighlight,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(AppTheme.radiusCard)),
                 ),
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    if (product.imageUrl.isNotEmpty)
+                    if (service.imageUrl.isNotEmpty)
                       ClipRRect(
-                        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                         child: Image.network(
-                          product.imageUrl.startsWith('http')
-                              ? product.imageUrl
-                              : 'http://192.168.110.199:8000${product.imageUrl}',
+                          service.imageUrl.startsWith('http')
+                              ? service.imageUrl
+                              : 'http://192.168.110.199:8000${service.imageUrl}',
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) =>
-                              Icon(Icons.image_outlined, color: context.colors.border, size: 50),
+                              Icon(Icons.build_circle_outlined, color: context.colors.border, size: 50),
                         ),
                       )
                     else
-                      Center(child: Icon(Icons.image_outlined, color: context.colors.border, size: 50)),
+                      Center(child: Icon(Icons.build_circle_outlined, color: context.colors.border, size: 50)),
                     Positioned(
                       top: 12,
                       left: 12,
@@ -1108,9 +879,9 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.location_on, color: Color(0xFFE67E22), size: 10),
+                            Icon(Icons.location_on, color: context.colors.primary, size: 10),
                             SizedBox(width: 4),
-                            Text(product.campus, style: TextStyle(color: Colors.white, fontSize: 9)),
+                            Text(service.sellerCampus, style: TextStyle(color: context.colors.textPrimary, fontSize: 9)),
                           ],
                         ),
                       ),
@@ -1130,37 +901,32 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(tag1, style: TextStyle(color: Color(0xFFE67E22), fontSize: 10, fontWeight: FontWeight.bold)),
-                        Container(
-                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: context.colors.cardBg,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(tag2, style: TextStyle(color: context.textColor, fontSize: 9)),
-                        )
+                        Text(tag1, style: TextStyle(color: context.colors.primary, fontSize: 10, fontWeight: FontWeight.bold)),
                       ],
                     ),
                     SizedBox(height: 8),
                     Text(
-                      product.name,
+                      service.title,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: context.textColor, fontSize: 14, fontWeight: FontWeight.bold),
+                      style: TextStyle(color: context.colors.textPrimary, fontSize: 14, fontWeight: FontWeight.bold),
+                    ),
+                    SizedBox(height: 6),
+                    Text(
+                      service.description,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: Colors.grey[500], fontSize: 11),
                     ),
                     Spacer(),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          (() {
-                            String pText = "Rp ${formatCurrency(product.price)}";
-                            if (product.itemType == 'Jasa' && product.advancedDetails['max_price'] != null) {
-                              pText += " - Rp ${formatCurrency(int.tryParse(product.advancedDetails['max_price'].toString()) ?? 0)}";
-                            }
-                            return pText;
-                          })(),
-                          style: TextStyle(color: context.textColor, fontSize: 16, fontWeight: FontWeight.bold),
+                          service.maxPrice != null
+                              ? "Rp ${formatCurrency(service.price)} - Rp ${formatCurrency(service.maxPrice!)}"
+                              : "Rp ${formatCurrency(service.price)}",
+                          style: TextStyle(color: context.colors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                         Text(
                           "View details ->",
@@ -1174,6 +940,93 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
             )
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildServiceDetailSheet(BuildContext context, ServiceItem service, ScrollController controller) {
+    return SingleChildScrollView(physics: const AlwaysScrollableScrollPhysics(), 
+      controller: controller,
+      padding: EdgeInsets.all(24.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(color: context.colors.border, borderRadius: BorderRadius.circular(2)),
+            ),
+          ),
+          SizedBox(height: 24),
+          if (service.imageUrl.isNotEmpty)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Image.network(
+                service.imageUrl.startsWith('http')
+                    ? service.imageUrl
+                    : 'http://192.168.110.199:8000${service.imageUrl}',
+                width: double.infinity,
+                height: 200,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) =>
+                    Container(height: 200, color: context.colors.cardBg, child: Icon(Icons.broken_image, size: 50)),
+              ),
+            ),
+          SizedBox(height: 16),
+          Text(service.category.toUpperCase(), style: TextStyle(color: context.colors.primary, fontSize: 12, fontWeight: FontWeight.bold)),
+          SizedBox(height: 8),
+          Text(service.title, style: TextStyle(color: context.colors.textPrimary, fontSize: 24, fontWeight: FontWeight.bold)),
+          SizedBox(height: 8),
+          Text(
+            service.maxPrice != null
+                ? "Rp ${formatCurrency(service.price)} - Rp ${formatCurrency(service.maxPrice!)}"
+                : "Rp ${formatCurrency(service.price)}",
+            style: TextStyle(color: context.colors.primary, fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          SizedBox(height: 16),
+          Divider(color: context.colors.cardBg),
+          SizedBox(height: 16),
+          Text("Deskripsi", style: TextStyle(color: context.colors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold)),
+          SizedBox(height: 8),
+          Text(service.description, style: TextStyle(color: context.colors.textMuted, fontSize: 14)),
+          SizedBox(height: 16),
+          Divider(color: context.colors.cardBg),
+          SizedBox(height: 16),
+          Text("Penjual", style: TextStyle(color: context.colors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold)),
+          SizedBox(height: 8),
+          Row(
+            children: [
+              Icon(Icons.person, color: context.colors.textMuted, size: 16),
+              SizedBox(width: 8),
+              Text(service.sellerName, style: TextStyle(color: context.colors.textMuted, fontSize: 14)),
+            ],
+          ),
+          SizedBox(height: 8),
+          Row(
+            children: [
+              Icon(Icons.location_on, color: context.colors.textMuted, size: 16),
+              SizedBox(width: 8),
+              // Use seller name if no campus is provided for service
+              Expanded(child: Text(service.sellerName, style: TextStyle(color: context.colors.textMuted, fontSize: 14))),
+            ],
+          ),
+          SizedBox(height: 32),
+          SizedBox(
+            width: double.infinity,
+            height: 50,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: context.colors.primary,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+              ),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text("Hubungi Penjual", style: TextStyle(color: context.colors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold)),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -3,7 +3,7 @@ import 'theme.dart';
 import 'dart:ui'; 
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'marketplace_screen.dart';
+import 'main_hub.dart';
 import 'auth_service.dart';
 import 'register_page.dart';
 class LoginPage extends StatefulWidget {
@@ -40,18 +40,17 @@ class _LoginPageState extends State<LoginPage> {
 
       if (!mounted) return;
 
-      // Navigasi ke halaman utama (Marketplace)
-      Navigator.pushReplacement(
-        context,
+      // Navigasi ke halaman utama (MainHub)
+      Navigator.pushReplacement(context, 
         MaterialPageRoute(
-          builder: (context) => const MarketplaceScreen(showWelcome: true),
+          builder: (context) => const MainHub(showWelcome: true),
         ),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('❌ Error: $e'), 
+          content: Text('âŒ Error: $e'), 
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
         ),
@@ -114,8 +113,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       TextButton(
                         onPressed: () {
-                          Navigator.push(
-                            context,
+                          Navigator.push(context, 
                             MaterialPageRoute(builder: (context) => const RegisterPage()),
                           );
                         },

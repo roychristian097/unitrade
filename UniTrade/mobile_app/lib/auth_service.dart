@@ -1,11 +1,11 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class AuthService {
   static String? token;
   static Map<String, dynamic>? currentUser;
 
-  static const String baseUrl = 'http://192.168.1.3:8000';
+  static const String baseUrl = 'http://192.168.110.199:8000';
 
   static Future<void> login(String email, String password) async {
     final uri = Uri.parse('$baseUrl/login');
@@ -13,7 +13,7 @@ class AuthService {
       uri,
       headers: {'Content-Type': 'application/json'},
       body: json.encode({'email': email, 'password': password}),
-    ).timeout(const Duration(seconds: 10));
+    ).timeout(Duration(seconds: 10));
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
@@ -36,7 +36,7 @@ class AuthService {
         'password': password,
         'campus': campus,
       }),
-    ).timeout(const Duration(seconds: 10));
+    ).timeout(Duration(seconds: 10));
 
     if (response.statusCode != 200) {
       final data = json.decode(response.body);

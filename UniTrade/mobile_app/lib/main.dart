@@ -47,5 +47,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
-// File marketplace_screen.dart digunakan untuk halaman utama

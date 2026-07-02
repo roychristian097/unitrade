@@ -1,3 +1,4 @@
+import 'theme.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'theme.dart';
@@ -106,8 +107,8 @@ class _SellItemScreenState extends State<SellItemScreen> {
 
       final isEdit = widget.existingProduct != null;
       final uri = isEdit 
-          ? Uri.http('192.168.1.3:8000', '/products/${widget.existingProduct!.id}')
-          : Uri.http('192.168.1.3:8000', '/products');
+          ? Uri.http('192.168.110.199:8000', '/products/${widget.existingProduct!.id}')
+          : Uri.http('192.168.110.199:8000', '/products');
       var request = http.MultipartRequest(isEdit ? 'PUT' : 'POST', uri);
 
       if (AuthService.token != null) {
@@ -139,7 +140,7 @@ class _SellItemScreenState extends State<SellItemScreen> {
         request.files.add(await http.MultipartFile.fromPath('file', _imageFile!.path));
       }
 
-      final streamedResponse = await request.send().timeout(const Duration(seconds: 15));
+      final streamedResponse = await request.send().timeout(Duration(seconds: 15));
       final response = await http.Response.fromStream(streamedResponse);
 
       if (response.statusCode == 200) {
@@ -399,7 +400,7 @@ class _SellItemScreenState extends State<SellItemScreen> {
                       : Text(widget.existingProduct != null ? "Save Changes" : "List Item", style: TextStyle(color: context.textColor, fontSize: 16, fontWeight: FontWeight.bold)),
                 ),
               ),
-              SizedBox(height: 32),
+              SizedBox(height: 120),
             ],
           ),
         ),

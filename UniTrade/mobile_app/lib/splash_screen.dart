@@ -10,11 +10,33 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+
   @override
   void initState() {
     super.initState();
+    
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
+    
+    _scaleAnimation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.elasticOut,
+    );
+    
+    _controller.forward();
+
     _navigateToLogin();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   void _navigateToLogin() async {
@@ -37,11 +59,14 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Using the combined logo and adjusting to a compact size
-            Image.asset(
-              'assets/images/logo_combined.png',
-              width: 180, // Compact size
-              fit: BoxFit.contain,
+            ScaleTransition(
+              scale: _scaleAnimation,
+              child: Image.asset(
+                'assets/images/logo_combined.png',
+                width: 180, // Compact size
+                fit: BoxFit.contain,
+                color: context.isDark ? null : Colors.black, // Ensure it works in light mode too
+              ),
             ),
             SizedBox(height: 24),
             // Optional: A subtle loading indicator

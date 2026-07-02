@@ -1,12 +1,15 @@
+import 'theme.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'theme.dart';
 import 'package:http/http.dart' as http;
+import 'checkout_screen.dart';
 import 'marketplace_screen.dart'; // import to reuse Product and formatCurrency
 import 'auth_service.dart';
 import 'chat_detail_screen.dart';
 import 'chat_list_screen.dart';
 import 'sell_item_screen.dart';
+import 'notification_screen.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final Product product;
@@ -20,17 +23,67 @@ class ProductDetailScreen extends StatefulWidget {
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
   List<Product> _relatedProducts = [];
   bool _isLoadingRelated = true;
+  bool _isWishlisted = false;
+  bool _isLoadingWishlist = true;
 
   @override
   void initState() {
     super.initState();
     _fetchRelatedProducts();
+    _checkWishlistStatus();
+  }
+
+  Future<void> _checkWishlistStatus() async {
+    try {
+      final token = AuthService.token;
+      if (token == null) return;
+      
+      final response = await http.get(
+        Uri.parse('${AuthService.baseUrl}/wishlist/${widget.product.id}/check'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        setState(() {
+          _isWishlisted = data['is_wishlisted'] ?? false;
+          _isLoadingWishlist = false;
+        });
+      }
+    } catch (e) {
+      setState(() => _isLoadingWishlist = false);
+    }
+  }
+
+  Future<void> _toggleWishlist() async {
+    try {
+      final token = AuthService.token;
+      if (token == null) return;
+      
+      setState(() {
+        _isWishlisted = !_isWishlisted;
+      });
+      
+      final response = await http.post(
+        Uri.parse('${AuthService.baseUrl}/wishlist/${widget.product.id}'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      
+      if (response.statusCode != 200) {
+        setState(() {
+          _isWishlisted = !_isWishlisted;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _isWishlisted = !_isWishlisted;
+      });
+    }
   }
 
   Future<void> _fetchRelatedProducts() async {
     try {
-      final uri = Uri.http('192.168.1.3:8000', '/products');
-      final response = await http.get(uri).timeout(const Duration(seconds: 5));
+      final uri = Uri.http('192.168.110.199:8000', '/products');
+      final response = await http.get(uri).timeout(Duration(seconds: 5));
 
       if (response.statusCode == 200) {
         List jsonResponse = json.decode(response.body);
@@ -56,7 +109,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     return Scaffold(
       backgroundColor: context.bgColor,
       appBar: _buildAppBar(isDesktop),
-      bottomNavigationBar: isDesktop ? null : _buildBottomNavBar(),
       body: SingleChildScrollView(
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
@@ -69,11 +121,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.arrow_back, color: Colors.grey[400], size: 16),
+                    Icon(Icons.arrow_back, color: context.textMuted, size: 16),
                     SizedBox(width: 8),
                     Text(
                       "Back to Marketplace",
-                      style: TextStyle(color: Colors.grey[400], fontSize: 13),
+                      style: TextStyle(color: context.textMuted, fontSize: 13),
                     ),
                   ],
                 ),
@@ -137,16 +189,16 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   context,
                   MaterialPageRoute(
                     builder: (context) => Scaffold(
-                      backgroundColor: Colors.black,
+                      backgroundColor: context.bgColor,
                       appBar: AppBar(
-                        backgroundColor: Colors.black,
+                        backgroundColor: context.bgColor,
                         iconTheme: IconThemeData(color: context.textColor),
                         elevation: 0,
                       ),
                       body: Center(
                         child: InteractiveViewer(
                           child: Image.network(
-                            'http://192.168.1.3:8000${widget.product.imageUrl}',
+                            'http://192.168.110.199:8000${widget.product.imageUrl}',
                             fit: BoxFit.contain,
                           ),
                         ),
@@ -158,22 +210,22 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(16),
                 child: Image.network(
-                  'http://192.168.1.3:8000${widget.product.imageUrl}',
+                  'http://192.168.110.199:8000${widget.product.imageUrl}',
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) =>
-                      Center(child: Icon(Icons.image_outlined, color: Colors.grey[700], size: 80)),
+                      Center(child: Icon(Icons.image_outlined, color: context.textMuted, size: 80)),
                 ),
               ),
             )
           else
-            Center(child: Icon(Icons.image_outlined, color: Colors.grey[700], size: 80)),
+            Center(child: Icon(Icons.image_outlined, color: context.colors.border, size: 80)),
           Positioned(
             top: 16,
             left: 16,
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: const Color(0xFFE67E22),
+                color: context.colors.primary,
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
@@ -196,8 +248,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(tag, style: TextStyle(color: Color(0xFFE67E22), fontSize: 12, fontWeight: FontWeight.bold)),
-            Text("Condition: ${widget.product.condition}", style: TextStyle(color: Colors.grey, fontSize: 12)),
+            Text(tag, style: TextStyle(color: context.colors.primary, fontSize: 12, fontWeight: FontWeight.bold)),
+            Text("Condition: ${widget.product.condition}", style: TextStyle(color: context.textMuted, fontSize: 12)),
           ],
         ),
         SizedBox(height: 12),
@@ -219,84 +271,59 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         SizedBox(height: 24),
         
         // Buttons
-        if (AuthService.currentUser != null && AuthService.currentUser!['id'] == widget.product.sellerId) ...[
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: () async {
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => SellItemScreen(existingProduct: widget.product)),
-                );
-                if (result == true) {
-                  // Normally would refresh this product, for now pop back to refresh marketplace
-                  if (mounted) Navigator.pop(context, true);
-                }
-              },
-              icon: Icon(Icons.edit_outlined, color: context.textColor, size: 18),
-              label: Text("Edit Listing", style: TextStyle(color: context.textColor, fontWeight: FontWeight.bold)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFE67E22),
-                padding: EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+        Row(
+          children: [
+            Expanded(
+              flex: 2,
+              child: ElevatedButton.icon(
+                onPressed: () {},
+                icon: Icon(Icons.shopping_cart_outlined, color: context.textColor, size: 18),
+                label: Text("Add to Cart", style: TextStyle(color: context.textColor, fontWeight: FontWeight.bold)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: context.colors.primary,
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                ),
               ),
             ),
-          )
-        ] else ...[
-          Row(
-            children: [
-              Expanded(
-                flex: 2,
-                child: ElevatedButton.icon(
-                  onPressed: () {},
-                  icon: Icon(Icons.shopping_cart_outlined, color: context.textColor, size: 18),
-                  label: Text("Add to Cart", style: TextStyle(color: context.textColor, fontWeight: FontWeight.bold)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFE67E22),
-                    padding: EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                  ),
-                ),
-              ),
-              SizedBox(width: 12),
-              Expanded(
-                flex: 2,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ChatDetailScreen(
-                          otherUserId: widget.product.sellerId,
-                          otherUserName: widget.product.sellerName,
-                          productId: widget.product.id,
-                          productName: widget.product.name,
-                        ),
+            SizedBox(width: 12),
+            Expanded(
+              flex: 2,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ChatDetailScreen(
+                        otherUserId: widget.product.sellerId,
+                        otherUserName: widget.product.sellerName,
+                        productId: widget.product.id,
+                        productName: widget.product.name,
                       ),
-                    );
-                  },
-                  icon: Icon(Icons.chat_bubble_outline, color: context.textColor, size: 18),
-                  label: Text("Chat with Seller", style: TextStyle(color: context.textColor, fontWeight: FontWeight.bold)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: context.surfaceHighlight,
-                    padding: EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                  ),
+                    ),
+                  );
+                },
+                icon: Icon(Icons.chat_bubble_outline, color: context.textColor, size: 18),
+                label: Text("Chat with Seller", style: TextStyle(color: context.textColor, fontWeight: FontWeight.bold)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: context.surfaceHighlight,
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                 ),
               ),
-              SizedBox(width: 12),
-              Container(
-                decoration: BoxDecoration(color: context.surfaceHighlight,
-                  shape: BoxShape.circle,
-                ),
-                child: IconButton(
-                  icon: Icon(Icons.favorite_border, color: context.textColor),
-                  onPressed: () {},
-                ),
-              )
-            ],
-          ),
-        ],
+            ),
+            SizedBox(width: 12),
+            Container(
+              decoration: BoxDecoration(color: context.surfaceHighlight,
+                shape: BoxShape.circle,
+              ),
+              child: IconButton(
+                icon: Icon(Icons.favorite_border, color: context.textColor),
+                onPressed: () {},
+              ),
+            )
+          ],
+        ),
         SizedBox(height: 32),
 
         // Info Box
@@ -313,18 +340,18 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.location_on, color: Color(0xFFE67E22), size: 16),
+                  Icon(Icons.location_on, color: context.colors.primary, size: 16),
                   SizedBox(width: 8),
-                  Expanded(child: Text("Handover Location: ${widget.product.advancedDetails['handover_location']?.isNotEmpty == true ? widget.product.advancedDetails['handover_location'] : 'Bisa disesuaikan'}", style: TextStyle(color: Colors.grey[400], fontSize: 13))),
+                  Expanded(child: Text("Handover Location: ${widget.product.advancedDetails['handover_location']?.isNotEmpty == true ? widget.product.advancedDetails['handover_location'] : 'Bisa disesuaikan'}", style: TextStyle(color: context.textMuted, fontSize: 13))),
                 ],
               ),
               SizedBox(height: 12),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.verified_user_outlined, color: Color(0xFFE67E22), size: 16),
+                  Icon(Icons.verified_user_outlined, color: context.colors.primary, size: 16),
                   SizedBox(width: 8),
-                  Expanded(child: Text("Transaction Protection: Meet in public, inspect item before pay.", style: TextStyle(color: Colors.grey[400], fontSize: 13))),
+                  Expanded(child: Text("Transaction Protection: Meet in public, inspect item before pay.", style: TextStyle(color: context.textMuted, fontSize: 13))),
                 ],
               ),
             ],
@@ -344,7 +371,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             children: [
               CircleAvatar(
                 radius: 20,
-                backgroundColor: const Color(0xFFE67E22),
+                backgroundColor: context.colors.primary,
                 child: Text(widget.product.sellerName.isNotEmpty ? widget.product.sellerName[0].toUpperCase() : "U", style: TextStyle(color: context.textColor, fontWeight: FontWeight.bold, fontSize: 18)),
               ),
               SizedBox(width: 12),
@@ -364,7 +391,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       ],
                     ),
                     SizedBox(height: 4),
-                    Text(widget.product.sellerCampus, style: TextStyle(color: Colors.grey[500], fontSize: 11)),
+                    Text(widget.product.sellerCampus, style: TextStyle(color: context.textMuted, fontSize: 11)),
                     SizedBox(height: 4),
                     Row(
                       children: [
@@ -374,7 +401,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         Icon(Icons.star, color: Colors.amber, size: 12),
                         Icon(Icons.star_half, color: Colors.amber, size: 12),
                         SizedBox(width: 6),
-                        Text("(7 reviews)", style: TextStyle(color: Colors.grey[500], fontSize: 11)),
+                        Text("(7 reviews)", style: TextStyle(color: context.textMuted, fontSize: 11)),
                       ],
                     ),
                   ],
@@ -383,7 +410,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text("Reward Points", style: TextStyle(color: Colors.grey, fontSize: 11)),
+                  Text("Reward Points", style: TextStyle(color: context.textMuted, fontSize: 11)),
                   SizedBox(height: 4),
                   Row(
                     children: [
@@ -416,16 +443,16 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           SizedBox(height: 16),
           if (warranty != null && warranty != 'Tidak ada')
             Row(children: [
-              Icon(Icons.security, color: Color(0xFFE67E22), size: 16),
+              Icon(Icons.security, color: context.colors.primary, size: 16),
               SizedBox(width: 8),
-              Text("Garansi Personal: $warranty", style: TextStyle(color: Colors.grey[400], fontSize: 14)),
+              Text("Garansi Personal: $warranty", style: TextStyle(color: context.textMuted, fontSize: 14)),
             ]),
           if (minNego != null) ...[
             SizedBox(height: 8),
             Row(children: [
-              Icon(Icons.price_change_outlined, color: Color(0xFFE67E22), size: 16),
+              Icon(Icons.price_change_outlined, color: context.colors.primary, size: 16),
               SizedBox(width: 8),
-              Text("Harga Minimum Nego: Rp ${formatCurrency(int.tryParse(minNego.toString()) ?? 0)}", style: TextStyle(color: Colors.grey[400], fontSize: 14)),
+              Text("Harga Minimum Nego: Rp ${formatCurrency(int.tryParse(minNego.toString()) ?? 0)}", style: TextStyle(color: context.textMuted, fontSize: 14)),
             ]),
           ],
           SizedBox(height: 32),
@@ -446,13 +473,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           width: MediaQuery.of(context).size.width * 0.6,
           child: Text(
             widget.product.description,
-            style: TextStyle(color: Colors.grey[400], fontSize: 14, height: 1.5),
+            style: TextStyle(color: context.textMuted, fontSize: 14, height: 1.5),
           ),
         ),
         SizedBox(height: 48),
         Text("Product Reviews (0)", style: TextStyle(color: context.textColor, fontSize: 18, fontWeight: FontWeight.bold)),
         SizedBox(height: 16),
-        Text("No reviews left for this product yet.", style: TextStyle(color: Colors.grey[600], fontSize: 14)),
+        Text("No reviews left for this product yet.", style: TextStyle(color: context.textMuted, fontSize: 14)),
       ],
     );
   }
@@ -466,27 +493,27 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         SizedBox(height: 16),
         Text(
           widget.product.description,
-          style: TextStyle(color: Colors.grey[400], fontSize: 14, height: 1.5),
+          style: TextStyle(color: context.textMuted, fontSize: 14, height: 1.5),
         ),
         SizedBox(height: 32),
         Text("Product Reviews (0)", style: TextStyle(color: context.textColor, fontSize: 18, fontWeight: FontWeight.bold)),
         SizedBox(height: 16),
-        Text("No reviews left for this product yet.", style: TextStyle(color: Colors.grey[600], fontSize: 14)),
+        Text("No reviews left for this product yet.", style: TextStyle(color: context.textMuted, fontSize: 14)),
       ],
     );
   }
 
   Widget _buildRelatedProducts(bool isDesktop) {
     if (_isLoadingRelated) {
-      return Center(child: CircularProgressIndicator(color: Color(0xFFE67E22)));
+      return Center(child: CircularProgressIndicator(color: context.colors.primary));
     }
     if (_relatedProducts.isEmpty) {
-      return Text("No related products found.", style: TextStyle(color: Colors.grey[600], fontSize: 14));
+      return Text("No related products found.", style: TextStyle(color: context.textMuted, fontSize: 14));
     }
 
     return GridView.builder(
       shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
+      physics: NeverScrollableScrollPhysics(),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: isDesktop ? 4 : 1, // 4 columns on desktop, 1 on mobile
         crossAxisSpacing: 20,
@@ -537,26 +564,26 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       ClipRRect(
                         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
                         child: Image.network(
-                          'http://192.168.1.3:8000${product.imageUrl}',
+                          'http://192.168.110.199:8000${product.imageUrl}',
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) =>
-                              Center(child: Icon(Icons.image_outlined, color: Colors.grey[700], size: 50)),
+                              Center(child: Icon(Icons.image_outlined, color: context.textMuted, size: 50)),
                         ),
                       )
                     else
-                      Center(child: Icon(Icons.image_outlined, color: Colors.grey[700], size: 50)),
+                      Center(child: Icon(Icons.image_outlined, color: context.textMuted, size: 50)),
                   Positioned(
                     top: 12,
                     left: 12,
                     child: Container(
                       padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.6),
+                        color: Colors.black.withValues(alpha: 0.6),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.location_on, color: Color(0xFFE67E22), size: 10),
+                          Icon(Icons.location_on, color: context.colors.primary, size: 10),
                           SizedBox(width: 4),
                           Text(product.campus, style: TextStyle(color: context.textColor, fontSize: 9)),
                         ],
@@ -577,11 +604,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(tag1, style: TextStyle(color: Color(0xFFE67E22), fontSize: 10, fontWeight: FontWeight.bold)),
+                      Text(tag1, style: TextStyle(color: context.colors.primary, fontSize: 10, fontWeight: FontWeight.bold)),
                       Container(
                         padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: Colors.grey[800],
+                          color: context.colors.cardBg,
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(tag2, style: TextStyle(color: context.textColor, fontSize: 9)),
@@ -612,10 +639,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       Container(
                         padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
-                          color: Color(0xFFE67E22).withOpacity(0.2),
+                          color: context.colors.primary.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Text("View", style: TextStyle(color: Color(0xFFE67E22), fontSize: 11, fontWeight: FontWeight.bold)),
+                        child: Text("View", style: TextStyle(color: context.colors.primary, fontSize: 11, fontWeight: FontWeight.bold)),
                       )
                     ],
                   )
@@ -650,21 +677,20 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           _buildAppBarTab("Services", icon: Icons.build_circle_outlined),
           SizedBox(width: 16),
           _buildAppBarTab("Chat", icon: Icons.chat_bubble_outline, onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => const ChatListScreen()));
+            Navigator.push(context,  MaterialPageRoute(builder: (context) => ChatListScreen()));
           }),
           SizedBox(width: 32),
-          IconButton(icon: Icon(Icons.light_mode_outlined, color: Colors.grey, size: 20), onPressed: () {}),
-          IconButton(icon: Icon(Icons.favorite_border, color: Colors.grey, size: 20), onPressed: () {}),
-          IconButton(icon: Icon(Icons.shopping_cart_outlined, color: Colors.grey, size: 20), onPressed: () {}),
-        ] else ...[
-          IconButton(icon: Icon(Icons.light_mode_outlined, color: Colors.grey, size: 20), onPressed: () {}),
+          IconButton(icon: Icon(Icons.favorite_border, color: context.textMuted, size: 20), onPressed: () {}),
+          IconButton(icon: Icon(Icons.shopping_cart_outlined, color: context.textMuted, size: 20), onPressed: () {}),
         ],
         IconButton(
-          icon: const Badge(
+          icon: Badge(
             backgroundColor: Colors.red,
-            child: Icon(Icons.notifications_none, color: Colors.grey, size: 20),
+            child: Icon(Icons.notifications_none, color: context.textMuted, size: 20),
           ),
-          onPressed: () {},
+          onPressed: () {
+            Navigator.push(context,  MaterialPageRoute(builder: (context) => const NotificationScreen()));
+          },
         ),
         if (isDesktop) SizedBox(width: 16),
         if (isDesktop)
@@ -679,7 +705,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               children: [
                 CircleAvatar(
                   radius: 12,
-                  backgroundColor: Colors.grey,
+                  backgroundColor: context.textMuted,
                   child: Icon(Icons.person, size: 16, color: context.textColor),
                 ),
                 SizedBox(width: 8),
@@ -688,11 +714,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(AuthService.currentUser?['name'] ?? "Guest", style: TextStyle(color: context.textColor, fontSize: 13, fontWeight: FontWeight.bold)),
-                    Text(AuthService.currentUser?['campus'] ?? "Universitas Nasional", style: TextStyle(color: Colors.grey[500], fontSize: 11)),
+                    Text(AuthService.currentUser?['campus'] ?? "Universitas Nasional", style: TextStyle(color: context.textMuted, fontSize: 11)),
                   ],
                 ),
                 SizedBox(width: 8),
-                Icon(Icons.keyboard_arrow_down, color: Colors.grey, size: 16),
+                Icon(Icons.keyboard_arrow_down, color: context.textMuted, size: 16),
               ],
             ),
           ),
@@ -707,17 +733,17 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isActive ? Color(0xFFE67E22).withOpacity(0.2) : Colors.transparent,
+          color: isActive ? context.colors.primary.withOpacity(0.2) : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
           children: [
-            Icon(icon, color: isActive ? const Color(0xFFE67E22) : Colors.grey, size: 16),
+            Icon(icon, color: isActive ? context.colors.primary : context.textMuted, size: 16),
             SizedBox(width: 6),
             Text(
               title,
               style: TextStyle(
-                color: isActive ? const Color(0xFFE67E22) : Colors.grey,
+                color: isActive ? context.colors.primary : context.textMuted,
                 fontSize: 14,
                 fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
               ),
@@ -742,7 +768,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             _buildBottomNavIcon(Icons.storefront, "Home", isActive: true),
             _buildBottomNavIcon(Icons.build_circle_outlined, "Services"),
             _buildBottomNavIcon(Icons.chat_bubble_outline, "Chat", onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => const ChatListScreen()));
+              Navigator.push(context,  MaterialPageRoute(builder: (context) => ChatListScreen()));
             }),
             _buildBottomNavIcon(Icons.shopping_cart_outlined, "Cart"),
             _buildBottomNavIcon(Icons.person_outline, "Profile"),
@@ -758,12 +784,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: isActive ? const Color(0xFFE67E22) : Colors.grey, size: 24),
+          Icon(icon, color: isActive ? context.colors.primary : context.textMuted, size: 24),
           SizedBox(height: 4),
           Text(
             label,
             style: TextStyle(
-              color: isActive ? const Color(0xFFE67E22) : Colors.grey,
+              color: isActive ? context.colors.primary : context.textMuted,
               fontSize: 10,
               fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
             ),
@@ -771,5 +797,34 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _deleteProduct(BuildContext context) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Delete Listing"),
+        content: Text("Are you sure you want to delete this listing?"),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text("Cancel")),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: Text("Delete", style: TextStyle(color: Colors.red))),
+        ]
+      )
+    );
+    if (confirm != true) return;
+    try {
+      final uri = Uri.http('192.168.110.199:8000', '/products/${widget.product.id}');
+      final response = await http.delete(uri);
+      if (response.statusCode == 200) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Listing deleted successfully")));
+          Navigator.pop(context, true);
+        }
+      } else {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Failed to delete listing")));
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")));
+    }
   }
 }

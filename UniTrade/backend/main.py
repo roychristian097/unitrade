@@ -70,7 +70,11 @@ def init_db():
             name TEXT,
             email TEXT UNIQUE,
             password_hash TEXT,
-            campus TEXT
+            campus TEXT,
+            points INTEGER DEFAULT 0,
+            role TEXT DEFAULT 'STUDENT',
+            verification_status TEXT DEFAULT 'PENDING',
+            student_id TEXT
         )
     ''')
     cursor.execute('''
@@ -98,7 +102,64 @@ def init_db():
         cursor.execute("ALTER TABLE products ADD COLUMN advanced_details TEXT DEFAULT '{}'")
     except sqlite3.OperationalError:
         pass
+        
+    try:
+        cursor.execute("ALTER TABLE products ADD COLUMN approval_status TEXT DEFAULT 'APPROVED'")
+    except sqlite3.OperationalError:
+        pass
 
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS services (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            seller_id INTEGER,
+            title TEXT,
+            description TEXT,
+            category TEXT,
+            price INTEGER,
+            max_price INTEGER,
+            campus TEXT,
+            meetup_location TEXT,
+            image_url TEXT,
+            approval_status TEXT DEFAULT 'PENDING',
+            FOREIGN KEY(seller_id) REFERENCES users(id)
+        )
+    ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS orders (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            buyer_id INTEGER,
+            total_amount INTEGER,
+            status TEXT DEFAULT 'PENDING',
+            payment_method TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(buyer_id) REFERENCES users(id)
+        )
+    ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS wishlists (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            product_id INTEGER,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(user_id) REFERENCES users(id),
+            FOREIGN KEY(product_id) REFERENCES products(id),
+            UNIQUE(user_id, product_id)
+        )
+    ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS reviews (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            reviewer_id INTEGER,
+            product_id INTEGER,
+            service_id INTEGER,
+            rating INTEGER,
+            comment TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(reviewer_id) REFERENCES users(id),
+            FOREIGN KEY(product_id) REFERENCES products(id),
+            FOREIGN KEY(service_id) REFERENCES services(id)
+        )
+    ''')
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS messages (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -112,23 +173,46 @@ def init_db():
             FOREIGN KEY(product_id) REFERENCES products(id)
         )
     ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS notifications (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            title TEXT,
+            message TEXT,
+            is_read BOOLEAN DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(user_id) REFERENCES users(id)
+        )
+    ''')
     
     # Check if empty to seed data
     cursor.execute("SELECT COUNT(*) FROM users")
     if cursor.fetchone()[0] == 0:
-        # Seed a dummy user
-        cursor.execute("INSERT INTO users (name, email, password_hash, campus) VALUES (?, ?, ?, ?)", 
-            ("Tester Student", "tester@student.ac.id", hash_password("123456"), "Universitas Nasional - Jakarta Selatan, Pasar Minggu"))
+        cursor.execute("INSERT INTO users (name, email, password_hash, campus, points, verification_status, role) VALUES (?, ?, ?, ?, ?, ?, ?)", 
+            ("Admin User", "admin@unitrade.ac.id", hash_password("admin123"), "Universitas Nasional - Jakarta Selatan, Pasar Minggu", 100, "APPROVED", "ADMIN"))
+            
+        cursor.execute("INSERT INTO users (name, email, password_hash, campus, points, verification_status, role) VALUES (?, ?, ?, ?, ?, ?, ?)", 
+            ("Tester Student", "tester@student.ac.id", hash_password("123456"), "Universitas Nasional - Jakarta Selatan, Pasar Minggu", 100, "APPROVED", "STUDENT"))
         user_id = cursor.lastrowid
         
         dummy_products = [
-            (user_id, "MacBook Pro M1 2020 8/256GB", "Lancar jaya untuk ngoding, lecet pemakaian sedikit.", 12000000, "Elektronik", "Pemakaian Wajar (Fair/Used)", "Universitas Nasional - Jakarta Selatan, Pasar Minggu", json.dumps(["DORM ESSENTIALS", "GOOD"]), ""),
-            (user_id, "Sony WH-1000XM4 Headphones", "Headphones over-ear Active Noise Cancelling terbaik. Kondisi istimewa, lengkap dengan kotak.", 2700000, "Elektronik", "Mulus (Like New)", "Universitas Nasional - Jakarta Selatan, Pasar Minggu", json.dumps(["PHONES", "LIKE NEW"]), ""),
-            (user_id, "Jaket Hoodie Teknik Sipil 2023", "Hoodie tebal warna biru dongker. Belum pernah dipakai.", 150000, "Pakaian", "Baru (Brand New)", "Universitas Indonesia - Depok, Beji", json.dumps(["CLOTHING", "NEW"]), ""),
-            (user_id, "Jasa Rakit PC / Install Ulang Laptop", "Menerima jasa rakit PC rapi, install Windows, Linux, dan aplikasi desain/arsitektur. Pengerjaan 1 hari.", 100000, "Jasa", "Semua Kondisi", "Universitas Nasional - Jakarta Selatan, Pasar Minggu", json.dumps(["SERVICES", "FAST"]), ""),
-            (user_id, "Kalkulator Scientific Casio fx-991EX", "Cocok untuk mahasiswa teknik. Tombol masih empuk semua, fungsi normal.", 250000, "Elektronik", "Mulus (Like New)", "Universitas Gunadarma - Depok, Margonda", json.dumps(["STUDY", "LIKE NEW"]), "")
+            (user_id, "MacBook Pro M1 2020 8/256GB", "Lancar jaya untuk ngoding, lecet pemakaian sedikit.", 12000000, "Elektronik", "Pemakaian Wajar (Fair/Used)", "Universitas Nasional - Jakarta Selatan, Pasar Minggu", json.dumps(["DORM ESSENTIALS", "GOOD"]), "", "APPROVED"),
+            (user_id, "Sony WH-1000XM4 Headphones", "Headphones over-ear Active Noise Cancelling terbaik. Kondisi istimewa, lengkap dengan kotak.", 2700000, "Elektronik", "Mulus (Like New)", "Universitas Nasional - Jakarta Selatan, Pasar Minggu", json.dumps(["PHONES", "LIKE NEW"]), "", "APPROVED"),
+            (user_id, "Jaket Hoodie Teknik Sipil 2023", "Hoodie tebal warna biru dongker. Belum pernah dipakai.", 150000, "Pakaian", "Baru (Brand New)", "Universitas Indonesia - Depok, Beji", json.dumps(["CLOTHING", "NEW"]), "", "APPROVED")
         ]
-        cursor.executemany("INSERT INTO products (seller_id, name, description, price, category, condition, campus, tags, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", dummy_products)
+        cursor.executemany("INSERT INTO products (seller_id, name, description, price, category, condition, campus, tags, image_url, approval_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", dummy_products)
+        
+        dummy_services = [
+            (user_id, "Jasa Rakit PC / Install Ulang Laptop", "Menerima jasa rakit PC rapi, install Windows, Linux.", "IT Support", 100000, 250000, "Universitas Nasional - Jakarta Selatan, Pasar Minggu", "Lab Komputer Blok A", "", "APPROVED"),
+            (user_id, "Jasa Desain Poster / UI UX", "Bisa desain pakai Figma atau Canva.", "Desain", 50000, None, "Universitas Nasional - Jakarta Selatan, Pasar Minggu", "Kantin Bawah", "", "APPROVED")
+        ]
+        cursor.executemany("INSERT INTO services (seller_id, title, description, category, price, max_price, campus, meetup_location, image_url, approval_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", dummy_services)
+        
+        dummy_notifications = [
+            (user_id, "Welcome to UniTrade!", "Selamat datang di UniTrade! Temukan barang dan jasa dari teman kampusmu di sini.", 0),
+            (user_id, "Tips Berjualan", "Lengkapi profil dan foto barang jualanmu agar lebih menarik pembeli ya!", 0)
+        ]
+        cursor.executemany("INSERT INTO notifications (user_id, title, message, is_read) VALUES (?, ?, ?, ?)", dummy_notifications)
         conn.commit()
     conn.close()
 
@@ -183,11 +267,14 @@ async def login(request: LoginRequest):
     conn.close()
     
     if user:
-        token = create_jwt({"user_id": user["id"], "name": user["name"], "campus": user["campus"]})
+        if user["verification_status"] == "PENDING":
+            raise HTTPException(status_code=403, detail="Account pending approval by admin")
+        
+        token = create_jwt({"user_id": user["id"], "name": user["name"], "campus": user["campus"], "role": user["role"]})
         return {
             "message": "Login berhasil!", 
             "token": token,
-            "user": {"id": user["id"], "name": user["name"], "email": user["email"], "campus": user["campus"]}
+            "user": {"id": user["id"], "name": user["name"], "email": user["email"], "campus": user["campus"], "role": user["role"]}
         }
     else:
         raise HTTPException(status_code=401, detail="Email atau password salah")
@@ -206,9 +293,24 @@ async def get_products(
     cursor = conn.cursor()
 
     query = """
-        SELECT p.*, u.name as seller_name, u.campus as seller_campus 
-        FROM products p
-        JOIN users u ON p.seller_id = u.id
+        SELECT * FROM (
+            SELECT p.id, p.seller_id, u.name as seller_name, u.campus as seller_campus,
+                   p.name, p.description, p.price, p.category, p.condition, p.campus,
+                   p.tags, p.image_url, p.item_type, p.advanced_details
+            FROM products p
+            JOIN users u ON p.seller_id = u.id
+            WHERE p.approval_status = 'APPROVED'
+            
+            UNION ALL
+            
+            SELECT s.id, s.seller_id, u.name as seller_name, u.campus as seller_campus,
+                   s.title as name, s.description, s.price, s.category, 'Jasa' as condition, s.campus,
+                   '["JASA"]' as tags, s.image_url, 'Jasa' as item_type, 
+                   '{"max_price": "' || IFNULL(s.max_price, '') || '", "meetup_location": "' || IFNULL(s.meetup_location, '') || '"}' as advanced_details
+            FROM services s
+            JOIN users u ON s.seller_id = u.id
+            WHERE s.approval_status = 'APPROVED'
+        ) p
         WHERE 1=1
     """
     params = []
@@ -241,6 +343,7 @@ async def get_products(
         query += " AND p.campus = ?"
         params.append(campus)
 
+    # Order by id DESC. Since ids overlap, it's roughly interleaving them.
     query += " ORDER BY p.id DESC"
 
     cursor.execute(query, params)
@@ -310,8 +413,8 @@ async def create_product(
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
     cursor.execute('''
-        INSERT INTO products (seller_id, name, description, price, category, condition, campus, tags, image_url, item_type, advanced_details) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO products (seller_id, name, description, price, category, condition, campus, tags, image_url, item_type, advanced_details, approval_status) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'APPROVED')
     ''', (current_user["user_id"], name, description, price, category, condition, campus, tags, image_url, item_type, advanced_details))
     conn.commit()
     new_id = cursor.lastrowid
@@ -423,3 +526,518 @@ async def get_chat_history(request: Request, other_user_id: int, product_id: int
     messages = [dict(row) for row in cursor.fetchall()]
     conn.close()
     return messages
+# NEW ENDPOINTS ADDED FOR WEB MIGRATION
+class ServiceCreate(BaseModel):
+    title: str
+    description: str
+    category: str
+    price: int
+    max_price: Optional[int] = None
+
+@app.get("/services")
+async def get_services(
+    request: Request,
+    q: Optional[str] = None,
+    category: Optional[str] = None,
+    min_price: Optional[int] = None,
+    max_price: Optional[int] = None,
+    campus: Optional[str] = None
+):
+    conn = sqlite3.connect(DB_FILE)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+
+    query = """
+        SELECT s.*, u.name as seller_name, u.campus as seller_campus 
+        FROM services s 
+        JOIN users u ON s.seller_id = u.id 
+        WHERE s.approval_status = 'APPROVED'
+    """
+    params = []
+
+    if q and q.strip():
+        query += " AND (s.title LIKE ? OR s.description LIKE ?)"
+        params.extend([f"%{q}%", f"%{q}%"])
+    
+    if category and category not in ["All", "Semua Kategori"]:
+        query += " AND s.category = ?"
+        params.append(category)
+        
+    if min_price is not None:
+        query += " AND s.price >= ?"
+        params.append(min_price)
+        
+    if max_price is not None:
+        query += " AND s.price <= ?"
+        params.append(max_price)
+        
+    if campus:
+        query += " AND u.campus = ?"
+        params.append(campus)
+
+    query += " ORDER BY s.id DESC"
+
+    cursor.execute(query, params)
+    services = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    return services
+
+@app.post("/services")
+async def create_service(
+    request: Request,
+    title: str = Form(...),
+    description: str = Form(...),
+    category: str = Form(...),
+    price: int = Form(...),
+    max_price: Optional[int] = Form(None),
+    campus: str = Form(...),
+    meetup_location: str = Form(...),
+    file: Optional[UploadFile] = File(None)
+):
+    current_user = get_current_user(request)
+    
+    image_url = ""
+    if file and file.filename:
+        file_path = f"uploads/{file.filename}"
+        with open(file_path, "wb") as f:
+            f.write(await file.read())
+        image_url = f"/uploads/{file.filename}"
+        
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO services (seller_id, title, description, category, price, max_price, campus, meetup_location, image_url, approval_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'APPROVED')",
+        (current_user["user_id"], title, description, category, price, max_price, campus, meetup_location, image_url))
+    conn.commit()
+    conn.close()
+    return {"message": "Service created successfully"}
+
+@app.put("/services/{service_id}")
+async def update_service(
+    service_id: int,
+    request: Request,
+    title: str = Form(...),
+    description: str = Form(...),
+    category: str = Form(...),
+    price: int = Form(...),
+    max_price: Optional[int] = Form(None),
+    campus: str = Form(...),
+    meetup_location: str = Form(...),
+    file: Optional[UploadFile] = File(None)
+):
+    current_user = get_current_user(request)
+    
+    conn = sqlite3.connect(DB_FILE)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT * FROM services WHERE id = ?", (service_id,))
+    service = cursor.fetchone()
+    
+    if not service:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Service tidak ditemukan")
+        
+    if service["seller_id"] != current_user["user_id"]:
+        conn.close()
+        raise HTTPException(status_code=403, detail="Anda tidak berhak mengedit layanan ini")
+        
+    image_url = service["image_url"]
+    if file and file.filename:
+        file_path = f"uploads/{file.filename}"
+        with open(file_path, "wb") as f:
+            f.write(await file.read())
+        image_url = f"/uploads/{file.filename}"
+        
+    cursor.execute('''
+        UPDATE services 
+        SET title=?, description=?, price=?, category=?, max_price=?, campus=?, meetup_location=?, image_url=?
+        WHERE id=?
+    ''', (title, description, price, category, max_price, campus, meetup_location, image_url, service_id))
+    
+    conn.commit()
+    conn.close()
+    return {"message": "Service updated successfully"}
+
+@app.get("/user/listings")
+async def get_user_listings(request: Request):
+    current_user = get_current_user(request)
+    
+    conn = sqlite3.connect(DB_FILE)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+        SELECT p.*, u.name as seller_name, u.campus as seller_campus 
+        FROM products p 
+        JOIN users u ON p.seller_id = u.id 
+        WHERE p.seller_id = ?
+        ORDER BY p.id DESC
+    ''', (current_user["user_id"],))
+    products = [dict(row) for row in cursor.fetchall()]
+    
+    cursor.execute('''
+        SELECT s.*, u.name as seller_name, u.campus as seller_campus 
+        FROM services s 
+        JOIN users u ON s.seller_id = u.id 
+        WHERE s.seller_id = ?
+        ORDER BY s.id DESC
+    ''', (current_user["user_id"],))
+    services = [dict(row) for row in cursor.fetchall()]
+    
+    conn.close()
+    
+    # Parse advanced details and tags for products
+    for p in products:
+        p["advanced_details"] = {}
+        if "advanced_details" in p and p["advanced_details"]:
+            try:
+                p["advanced_details"] = json.loads(p["advanced_details"])
+            except Exception:
+                pass
+                
+        p["tags"] = []
+        if "tags" in p and p["tags"]:
+            try:
+                p["tags"] = json.loads(p["tags"])
+            except Exception:
+                pass
+                
+    return {"products": products, "services": services}
+
+class OrderCreate(BaseModel):
+    total_amount: int
+    payment_method: str
+
+@app.post("/checkout")
+async def checkout(request: Request, order: OrderCreate):
+    current_user = get_current_user(request)
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO orders (buyer_id, total_amount, payment_method) VALUES (?, ?, ?)",
+        (current_user["user_id"], order.total_amount, order.payment_method))
+    conn.commit()
+    conn.close()
+    return {"message": "Order created successfully"}
+
+@app.get("/user/profile")
+async def user_profile(request: Request):
+    current_user = get_current_user(request)
+    conn = sqlite3.connect(DB_FILE)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, name, email, campus, points, role, verification_status FROM users WHERE id = ?", (current_user["user_id"],))
+    user = cursor.fetchone()
+    conn.close()
+    if user:
+        return dict(user)
+    raise HTTPException(status_code=404, detail="User not found")
+
+# WISHLIST ENDPOINTS
+@app.get("/wishlist")
+async def get_wishlist(request: Request):
+    current_user = get_current_user(request)
+    conn = sqlite3.connect(DB_FILE)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT p.*, u.name as seller_name, u.campus as seller_campus 
+        FROM wishlists w
+        JOIN products p ON w.product_id = p.id
+        JOIN users u ON p.seller_id = u.id
+        WHERE w.user_id = ?
+        ORDER BY w.created_at DESC
+    ''', (current_user["user_id"],))
+    rows = cursor.fetchall()
+    conn.close()
+
+    results = []
+    for row in rows:
+        results.append({
+            "id": row["id"],
+            "seller_id": row["seller_id"],
+            "seller_name": row["seller_name"],
+            "seller_campus": row["seller_campus"],
+            "name": row["name"],
+            "description": row["description"],
+            "price": row["price"],
+            "category": row["category"],
+            "condition": row["condition"],
+            "campus": row["campus"],
+            "tags": json.loads(row["tags"]) if row["tags"] else [],
+            "image_url": row["image_url"]
+        })
+
+    return results
+
+@app.post("/wishlist/{product_id}")
+async def toggle_wishlist(request: Request, product_id: int):
+    current_user = get_current_user(request)
+    user_id = current_user["user_id"]
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    
+    # Check if already exists
+    cursor.execute("SELECT id FROM wishlists WHERE user_id = ? AND product_id = ?", (user_id, product_id))
+    existing = cursor.fetchone()
+    
+    if existing:
+        cursor.execute("DELETE FROM wishlists WHERE id = ?", (existing[0],))
+        status = "removed"
+    else:
+        cursor.execute("INSERT INTO wishlists (user_id, product_id) VALUES (?, ?)", (user_id, product_id))
+        status = "added"
+        
+    conn.commit()
+    conn.close()
+    return {"status": status}
+
+@app.get("/wishlist/{product_id}/check")
+async def check_wishlist(request: Request, product_id: int):
+    current_user = get_current_user(request)
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute("SELECT id FROM wishlists WHERE user_id = ? AND product_id = ?", (current_user["user_id"], product_id))
+    existing = cursor.fetchone()
+    conn.close()
+    return {"is_wishlisted": bool(existing)}
+
+# NOTIFICATIONS ENDPOINTS
+@app.get("/notifications")
+async def get_notifications(request: Request):
+    current_user = get_current_user(request)
+    conn = sqlite3.connect(DB_FILE)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT * FROM notifications 
+        WHERE user_id = ? 
+        ORDER BY created_at DESC
+    ''', (current_user["user_id"],))
+    notifs = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    return notifs
+
+@app.post("/notifications/{notif_id}/read")
+async def read_notification(request: Request, notif_id: int):
+    current_user = get_current_user(request)
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute('''
+        UPDATE notifications SET is_read = 1 
+        WHERE id = ? AND user_id = ?
+    ''', (notif_id, current_user["user_id"]))
+    conn.commit()
+    conn.close()
+    return {"status": "success"}
+
+# ADMIN ENDPOINTS
+
+def verify_admin(request: Request):
+    user = get_current_user(request)
+    if user.get("role") != "ADMIN":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return user
+
+@app.get("/admin/users")
+async def admin_get_users(request: Request):
+    verify_admin(request)
+    conn = sqlite3.connect(DB_FILE)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, name, email, campus, role, verification_status FROM users WHERE verification_status = 'PENDING'")
+    users = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    return users
+
+@app.post("/admin/users/{user_id}/{action}")
+async def admin_action_user(request: Request, user_id: int, action: str):
+    verify_admin(request)
+    if action not in ["approve", "reject"]:
+        raise HTTPException(status_code=400, detail="Invalid action")
+        
+    status = "APPROVED" if action == "approve" else "REJECTED"
+    
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute("UPDATE users SET verification_status = ? WHERE id = ?", (status, user_id))
+    conn.commit()
+    conn.close()
+    return {"message": f"User {action}d successfully"}
+
+@app.get("/admin/products")
+async def admin_get_products(request: Request):
+    verify_admin(request)
+    conn = sqlite3.connect(DB_FILE)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT p.*, u.name as seller_name 
+        FROM products p
+        JOIN users u ON p.seller_id = u.id
+        WHERE p.approval_status = 'PENDING'
+    ''')
+    items = [dict(row) for row in cursor.fetchall()]
+    # parse tags for json
+    for item in items:
+        if item.get("tags"):
+            try:
+                import json
+                item["tags"] = json.loads(item["tags"])
+            except:
+                item["tags"] = []
+    conn.close()
+    return items
+
+@app.post("/admin/products/{product_id}/{action}")
+async def admin_action_product(request: Request, product_id: int, action: str):
+    verify_admin(request)
+    if action not in ["approve", "reject"]:
+        raise HTTPException(status_code=400, detail="Invalid action")
+        
+    status = "APPROVED" if action == "approve" else "REJECTED"
+    
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute("UPDATE products SET approval_status = ? WHERE id = ?", (status, product_id))
+    conn.commit()
+    conn.close()
+    return {"message": f"Product {action}d successfully"}
+
+@app.get("/admin/services")
+async def admin_get_services(request: Request):
+    verify_admin(request)
+    conn = sqlite3.connect(DB_FILE)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT s.*, u.name as seller_name 
+        FROM services s
+        JOIN users u ON s.seller_id = u.id
+        WHERE s.approval_status = 'PENDING'
+    ''')
+    items = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    return items
+
+@app.post("/admin/services/{service_id}/{action}")
+async def admin_action_service(request: Request, service_id: int, action: str):
+    verify_admin(request)
+    if action not in ["approve", "reject"]:
+        raise HTTPException(status_code=400, detail="Invalid action")
+        
+    status = "APPROVED" if action == "approve" else "REJECTED"
+    
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute("UPDATE services SET approval_status = ? WHERE id = ?", (status, service_id))
+    conn.commit()
+    conn.close()
+    return {"message": f"Service {action}d successfully"}
+
+@app.put('/products/{product_id}')
+async def update_product(product_id: int, request: Request):
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    
+    form_data = await request.form()
+    
+    fields = []
+    params = []
+    
+    for key in ['name', 'description', 'price', 'category', 'condition', 'campus', 'item_type']:
+        if key in form_data:
+            fields.append(f'{key} = ?')
+            val = form_data[key]
+            if key == 'price':
+                try: val = int(val)
+                except: val = 0
+            params.append(val)
+            
+    if 'tags' in form_data:
+        fields.append('tags = ?')
+        params.append(form_data['tags'])
+        
+    if 'advanced_details' in form_data:
+        fields.append('advanced_details = ?')
+        params.append(form_data['advanced_details'])
+
+    if 'image' in form_data and hasattr(form_data['image'], 'filename') and form_data['image'].filename:
+        image_file = form_data['image']
+        import uuid
+        import shutil
+        filename = f"{uuid.uuid4()}_{image_file.filename}"
+        file_path = os.path.join(UPLOAD_DIR, filename)
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(image_file.file, buffer)
+        image_url = f"/static/uploads/{filename}"
+        fields.append('image_url = ?')
+        params.append(image_url)
+
+    if not fields:
+        return {"status": "no_changes"}
+
+    params.append(product_id)
+    query = f"UPDATE products SET {', '.join(fields)} WHERE id = ?"
+    cursor.execute(query, params)
+    conn.commit()
+    conn.close()
+    return {"status": "success"}
+
+@app.delete('/products/{product_id}')
+async def delete_product(product_id: int):
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM products WHERE id = ?", (product_id,))
+    conn.commit()
+    conn.close()
+    return {"status": "success"}
+
+@app.delete('/services/{service_id}')
+async def delete_service(service_id: int):
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM services WHERE id = ?", (service_id,))
+    conn.commit()
+    conn.close()
+    return {"status": "success"}
+
+@app.put('/services/{service_id}')
+async def update_service(service_id: int, request: Request):
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    
+    form_data = await request.form()
+    
+    fields = []
+    params = []
+    
+    for key in ['title', 'description', 'price', 'category']:
+        if key in form_data:
+            fields.append(f'{key} = ?')
+            val = form_data[key]
+            if key == 'price':
+                try: val = int(val)
+                except: val = 0
+            params.append(val)
+
+    if 'image' in form_data and hasattr(form_data['image'], 'filename') and form_data['image'].filename:
+        image_file = form_data['image']
+        import uuid
+        import shutil
+        filename = f"{uuid.uuid4()}_{image_file.filename}"
+        file_path = os.path.join(UPLOAD_DIR, filename)
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(image_file.file, buffer)
+        image_url = f"/static/uploads/{filename}"
+        fields.append('image_url = ?')
+        params.append(image_url)
+
+    if not fields:
+        return {"status": "no_changes"}
+
+    params.append(service_id)
+    query = f"UPDATE services SET {', '.join(fields)} WHERE id = ?"
+    cursor.execute(query, params)
+    conn.commit()
+    conn.close()
+    return {"status": "success"}

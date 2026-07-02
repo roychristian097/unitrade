@@ -1,3 +1,4 @@
+﻿import 'theme.dart';
 import 'package:flutter/material.dart';
 import 'theme.dart';
 import 'dart:ui';
@@ -30,7 +31,14 @@ class _RegisterPageState extends State<RegisterPage> {
   Future<void> _register() async {
     if (_nameController.text.isEmpty || _emailController.text.isEmpty || _passwordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill all fields'), backgroundColor: Colors.red),
+        SnackBar(content: Text('Please fill all fields'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
+    if (!_emailController.text.endsWith('@student.ac.id')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Email must be a @student.ac.id address'), backgroundColor: Colors.red),
       );
       return;
     }
@@ -47,7 +55,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Registration successful! You can now log in.'), backgroundColor: Colors.green),
+        SnackBar(content: Text('Registration successful! You can now log in.'), backgroundColor: Colors.green),
       );
       Navigator.pop(context); // go back to login page
     } catch (e) {
@@ -139,7 +147,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           child: ElevatedButton(
                             onPressed: _isLoading ? null : _register,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFE67E22),
+                              backgroundColor: context.colors.primary,
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
                               elevation: 8,
                               shadowColor: Color(0xFFE67E22).withOpacity(0.5),
