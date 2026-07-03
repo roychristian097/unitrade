@@ -101,6 +101,40 @@ def init_db():
             FOREIGN KEY(product_id) REFERENCES products(id)
         )
     ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS carts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            product_id INTEGER,
+            quantity INTEGER DEFAULT 1,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(user_id) REFERENCES users(id),
+            FOREIGN KEY(product_id) REFERENCES products(id)
+        )
+    ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS orders (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            total_amount INTEGER,
+            payment_method TEXT,
+            delivery_address TEXT,
+            status TEXT DEFAULT 'Pending',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(user_id) REFERENCES users(id)
+        )
+    ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS order_items (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            order_id INTEGER,
+            product_id INTEGER,
+            quantity INTEGER,
+            price_at_checkout INTEGER,
+            FOREIGN KEY(order_id) REFERENCES orders(id),
+            FOREIGN KEY(product_id) REFERENCES products(id)
+        )
+    ''')
     
     # Check if empty to seed data
     cursor.execute("SELECT COUNT(*) FROM users")
@@ -147,6 +181,17 @@ class MessageCreate(BaseModel):
     receiver_id: int
     product_id: int
     message: str
+
+class CartItemCreate(BaseModel):
+    product_id: int
+    quantity: int = 1
+
+class CartItemUpdate(BaseModel):
+    quantity: int
+
+class CheckoutRequest(BaseModel):
+    payment_method: str
+    delivery_address: str
 
 @app.post("/register")
 async def register(request: RegisterRequest):
@@ -398,3 +443,225 @@ async def get_chat_history(request: Request, other_user_id: int, product_id: int
     messages = [dict(row) for row in cursor.fetchall()]
     conn.close()
     return messages
+
+@app.post("/cart")
+async def add_to_cart(request: Request, cart_item: CartItemCreate):
+    current_user = get_current_user(request)
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    
+    # Check if product exists
+    cursor.execute("SELECT id FROM products WHERE id = ?", (cart_item.product_id,))
+    if not cursor.fetchone():
+        conn.close()
+        raise HTTPException(status_code=404, detail="Product not found")
+        
+    # Check if already in cart
+    cursor.execute("SELECT id, quantity FROM carts WHERE user_id = ? AND product_id = ?", (current_user["user_id"], cart_item.product_id))
+    existing = cursor.fetchone()
+    
+    if existing:
+        new_quantity = existing[1] + cart_item.quantity
+        cursor.execute("UPDATE carts SET quantity = ? WHERE id = ?", (new_quantity, existing[0]))
+    else:
+        cursor.execute("INSERT INTO carts (user_id, product_id, quantity) VALUES (?, ?, ?)", 
+                       (current_user["user_id"], cart_item.product_id, cart_item.quantity))
+                       
+    conn.commit()
+    conn.close()
+    return {"message": "Item added to cart"}
+
+@app.get("/cart")
+async def get_cart(request: Request):
+    current_user = get_current_user(request)
+    conn = sqlite3.connect(DB_FILE)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+        SELECT c.id as cart_id, c.quantity, p.* 
+        FROM carts c
+        JOIN products p ON c.product_id = p.id
+        WHERE c.user_id = ?
+    ''', (current_user["user_id"],))
+    
+    cart_items = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    
+    # Parse tags back to list for frontend
+    for item in cart_items:
+        try:
+            item["tags"] = json.loads(item["tags"])
+        except:
+            item["tags"] = []
+            
+    return {"cart_items": cart_items}
+
+@app.delete("/cart/{cart_id}")
+async def remove_from_cart(cart_id: int, request: Request):
+    current_user = get_current_user(request)
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    
+    cursor.execute("DELETE FROM carts WHERE id = ? AND user_id = ?", (cart_id, current_user["user_id"]))
+    changes = conn.total_changes
+    conn.commit()
+    conn.close()
+    
+    if changes == 0:
+        raise HTTPException(status_code=404, detail="Cart item not found or unauthorized")
+        
+    return {"message": "Item removed from cart"}
+
+@app.put("/cart/{cart_id}")
+async def update_cart_quantity(cart_id: int, cart_item: CartItemUpdate, request: Request):
+    current_user = get_current_user(request)
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    
+    if cart_item.quantity < 1:
+        conn.close()
+        raise HTTPException(status_code=400, detail="Quantity must be at least 1")
+        
+    cursor.execute("UPDATE carts SET quantity = ? WHERE id = ? AND user_id = ?", 
+                   (cart_item.quantity, cart_id, current_user["user_id"]))
+    changes = conn.total_changes
+    conn.commit()
+    conn.close()
+    
+    if changes == 0:
+        raise HTTPException(status_code=404, detail="Cart item not found or unauthorized")
+        
+    return {"message": "Cart quantity updated successfully"}
+
+@app.post("/checkout")
+async def checkout(request: Request, checkout_data: CheckoutRequest):
+    current_user = get_current_user(request)
+    user_id = current_user["user_id"]
+    
+    conn = sqlite3.connect(DB_FILE)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    
+    # Ambil semua barang dari keranjang
+    cursor.execute('''
+        SELECT c.product_id, c.quantity, p.price 
+        FROM carts c
+        JOIN products p ON c.product_id = p.id
+        WHERE c.user_id = ?
+    ''', (user_id,))
+    
+    cart_items = cursor.fetchall()
+    
+    if not cart_items:
+        conn.close()
+        raise HTTPException(status_code=400, detail="Cart is empty")
+        
+    total_amount = sum(item["price"] * item["quantity"] for item in cart_items)
+    
+    # Buat pesanan baru
+    cursor.execute(
+        "INSERT INTO orders (user_id, total_amount, payment_method, delivery_address) VALUES (?, ?, ?, ?)",
+        (user_id, total_amount, checkout_data.payment_method, checkout_data.delivery_address)
+    )
+    order_id = cursor.lastrowid
+    
+    # Pindahkan dari keranjang ke order_items
+    for item in cart_items:
+        cursor.execute(
+            "INSERT INTO order_items (order_id, product_id, quantity, price_at_checkout) VALUES (?, ?, ?, ?)",
+            (order_id, item["product_id"], item["quantity"], item["price"])
+        )
+        
+    # Kosongkan keranjang
+    cursor.execute("DELETE FROM carts WHERE user_id = ?", (user_id,))
+    
+    conn.commit()
+    conn.close()
+    
+    return {"message": "Checkout successful", "order_id": order_id, "total_amount": total_amount}
+
+@app.put("/orders/{order_id}/complete")
+async def complete_order(order_id: int, request: Request):
+    current_user = get_current_user(request)
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    
+    cursor.execute("UPDATE orders SET status = 'Selesai' WHERE id = ? AND user_id = ?", (order_id, current_user["user_id"]))
+    changes = conn.total_changes
+    
+    conn.commit()
+    conn.close()
+    
+    if changes == 0:
+        raise HTTPException(status_code=404, detail="Order not found or unauthorized")
+        
+    return {"message": "Order marked as completed"}
+
+@app.get("/orders/{order_id}")
+async def get_order(order_id: int, request: Request):
+    current_user = get_current_user(request)
+    conn = sqlite3.connect(DB_FILE)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    
+    # Ambil detail pesanan
+    cursor.execute("SELECT * FROM orders WHERE id = ? AND user_id = ?", (order_id, current_user["user_id"]))
+    order = cursor.fetchone()
+    
+    if not order:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Order not found")
+        
+    # Ambil barang-barang di pesanan ini
+    cursor.execute('''
+        SELECT oi.quantity, oi.price_at_checkout as price, p.name, p.image_url 
+        FROM order_items oi
+        JOIN products p ON oi.product_id = p.id
+        WHERE oi.order_id = ?
+    ''', (order_id,))
+    items = [dict(row) for row in cursor.fetchall()]
+    
+    conn.close()
+    
+    order_dict = dict(order)
+    order_dict["items"] = items
+    
+    return order_dict
+
+@app.get("/orders")
+async def get_orders(request: Request):
+    current_user = get_current_user(request)
+    conn = sqlite3.connect(DB_FILE)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    
+    # Ambil semua pesanan milik user, diurutkan dari yang terbaru
+    cursor.execute("SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC", (current_user["user_id"],))
+    orders = cursor.fetchall()
+    
+    result = []
+    for order in orders:
+        order_dict = dict(order)
+        # Ambil satu barang saja (barang pertama) untuk ditampilkan di riwayat
+        cursor.execute('''
+            SELECT oi.quantity, oi.price_at_checkout as price, p.name, p.image_url 
+            FROM order_items oi
+            JOIN products p ON oi.product_id = p.id
+            WHERE oi.order_id = ?
+            LIMIT 1
+        ''', (order["id"],))
+        first_item = cursor.fetchone()
+        
+        # Hitung total jenis barang
+        cursor.execute("SELECT COUNT(*) FROM order_items WHERE order_id = ?", (order["id"],))
+        total_items = cursor.fetchone()[0]
+        
+        if first_item:
+            order_dict["first_item"] = dict(first_item)
+            order_dict["total_item_types"] = total_items
+            
+        result.append(order_dict)
+        
+    conn.close()
+    return result

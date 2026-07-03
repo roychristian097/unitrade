@@ -6,6 +6,9 @@ import 'product_detail_screen.dart';
 import 'sell_item_screen.dart';
 import 'auth_service.dart';
 import 'chat_list_screen.dart';
+import 'cart_screen.dart';
+import 'cart_service.dart';
+import 'order_history_screen.dart';
 
 class CurrencyInputFormatter extends TextInputFormatter {
   @override
@@ -154,7 +157,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
         queryParams['campus'] = _selectedJabodetabekCampus;
       }
 
-      final uri = Uri.http('192.168.1.3:8000', '/products', queryParams);
+      final uri = Uri.http('192.168.100.63:8000', '/products', queryParams);
 
       final response = await http.get(uri).timeout(const Duration(seconds: 5));
 
@@ -211,7 +214,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        "Selamat datang, $_welcomeName 😊",
+                        "Selamat datang, $_welcomeName Ã°Å¸ËœÅ ",
                         style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
                       ),
                       InkWell(
@@ -296,6 +299,12 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
           IconButton(icon: const Icon(Icons.shopping_cart_outlined, color: Colors.grey, size: 20), onPressed: () {}),
         ] else ...[
           IconButton(icon: const Icon(Icons.light_mode_outlined, color: Colors.grey, size: 20), onPressed: () {}),
+          IconButton(
+            icon: const Icon(Icons.receipt_long, color: Colors.grey, size: 20),
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) => const OrderHistoryScreen()));
+            },
+          ),
         ],
         IconButton(
           icon: const Badge(
@@ -382,7 +391,9 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
             _buildBottomNavIcon(Icons.chat_bubble_outline, "Chat", onTap: () {
               Navigator.push(context, MaterialPageRoute(builder: (context) => const ChatListScreen()));
             }),
-            _buildBottomNavIcon(Icons.shopping_cart_outlined, "Cart"),
+            _buildBottomNavIcon(Icons.shopping_cart_outlined, "Cart", onTap: () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) => const CartScreen()));
+            }),
             _buildBottomNavIcon(Icons.person_outline, "Profile"),
           ],
         ),
@@ -912,7 +923,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                       ClipRRect(
                         borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                         child: Image.network(
-                          'http://192.168.1.3:8000${product.imageUrl}',
+                          'http://192.168.100.63:8000${product.imageUrl}',
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) =>
                               Icon(Icons.image_outlined, color: Colors.grey[700], size: 50),
@@ -982,13 +993,33 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          "Rp ${formatCurrency(product.price)}",
-                          style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                        Expanded(
+                          child: Text(
+                            "Rp ${formatCurrency(product.price)}",
+                            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                        const Text(
-                          "View details ->",
-                          style: TextStyle(color: Color(0xFFE67E22), fontSize: 12, fontWeight: FontWeight.w500),
+                        IconButton(
+                          icon: const Icon(Icons.add_shopping_cart, color: Color(0xFFE67E22), size: 20),
+                          onPressed: () async {
+                            try {
+                              await CartService.addToCart(product.id);
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('${product.name} added to cart!'), backgroundColor: Colors.green),
+                                );
+                              }
+                            } catch (e) {
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Failed to add to cart: $e'), backgroundColor: Colors.red),
+                                );
+                              }
+                            }
+                          },
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
                         ),
                       ],
                     )

@@ -1,4 +1,4 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
@@ -60,7 +60,7 @@ class _SellItemScreenState extends State<SellItemScreen> {
       final String rawPrice = _priceController.text.replaceAll(RegExp(r'[^0-9]'), '');
       final int price = int.parse(rawPrice.isEmpty ? '0' : rawPrice);
 
-      final uri = Uri.http('192.168.1.3:8000', '/products');
+      final uri = Uri.http('192.168.100.63:8000', '/products');
       var request = http.MultipartRequest('POST', uri);
 
       if (AuthService.token != null) {

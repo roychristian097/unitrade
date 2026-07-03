@@ -1,10 +1,12 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'marketplace_screen.dart'; // import to reuse Product and formatCurrency
-import 'auth_service.dart';
+import 'marketplace_screen.dart';
 import 'chat_detail_screen.dart';
 import 'chat_list_screen.dart';
+import 'cart_service.dart';
+import 'cart_screen.dart';
+import 'auth_service.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final Product product;
@@ -19,6 +21,23 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   List<Product> _relatedProducts = [];
   bool _isLoadingRelated = true;
 
+  Future<void> _addToCart() async {
+    try {
+      await CartService.addToCart(widget.product.id);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Item added to cart!'), backgroundColor: Colors.green),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to add to cart: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -27,7 +46,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
   Future<void> _fetchRelatedProducts() async {
     try {
-      final uri = Uri.http('192.168.1.3:8000', '/products');
+      final uri = Uri.http('192.168.100.63:8000', '/products');
       final response = await http.get(uri).timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
@@ -132,7 +151,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             ClipRRect(
               borderRadius: BorderRadius.circular(16),
               child: Image.network(
-                'http://192.168.1.3:8000${widget.product.imageUrl}',
+                'http://192.168.100.63:8000${widget.product.imageUrl}',
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) =>
                     Center(child: Icon(Icons.image_outlined, color: Colors.grey[700], size: 80)),
@@ -191,7 +210,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             Expanded(
               flex: 2,
               child: ElevatedButton.icon(
-                onPressed: () {},
+                onPressed: _addToCart,
                 icon: const Icon(Icons.shopping_cart_outlined, color: Colors.white, size: 18),
                 label: const Text("Add to Cart", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                 style: ElevatedButton.styleFrom(
@@ -547,7 +566,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           const SizedBox(width: 32),
           IconButton(icon: const Icon(Icons.light_mode_outlined, color: Colors.grey, size: 20), onPressed: () {}),
           IconButton(icon: const Icon(Icons.favorite_border, color: Colors.grey, size: 20), onPressed: () {}),
-          IconButton(icon: const Icon(Icons.shopping_cart_outlined, color: Colors.grey, size: 20), onPressed: () {}),
+          IconButton(
+            icon: const Icon(Icons.shopping_cart_outlined, color: Colors.grey, size: 20),
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) => const CartScreen()));
+            },
+          ),
         ] else ...[
           IconButton(icon: const Icon(Icons.light_mode_outlined, color: Colors.grey, size: 20), onPressed: () {}),
         ],
@@ -636,7 +660,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             _buildBottomNavIcon(Icons.chat_bubble_outline, "Chat", onTap: () {
               Navigator.push(context, MaterialPageRoute(builder: (context) => const ChatListScreen()));
             }),
-            _buildBottomNavIcon(Icons.shopping_cart_outlined, "Cart"),
+            _buildBottomNavIcon(Icons.shopping_cart_outlined, "Cart", onTap: () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) => const CartScreen()));
+            }),
             _buildBottomNavIcon(Icons.person_outline, "Profile"),
           ],
         ),

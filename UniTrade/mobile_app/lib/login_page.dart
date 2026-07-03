@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'dart:ui'; 
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -50,7 +50,7 @@ class _LoginPageState extends State<LoginPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('❌ Error: $e'), 
+          content: Text('âŒ Error: $e'), 
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
         ),
@@ -361,7 +361,7 @@ class _LoginPageState extends State<LoginPage> {
 
                   // Footer Hak Cipta
                   const Text(
-                    '© 2026 UniTrade, Inc. All rights reserved.',
+                    'Â© 2026 UniTrade, Inc. All rights reserved.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: Colors.grey,
