@@ -6,6 +6,7 @@ import 'theme.dart';
 import 'login_page.dart';
 import 'wishlist_screen.dart';
 import 'notification_screen.dart';
+import 'order_history_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -250,9 +251,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       children: [
                         _buildActionItem(
                           icon: Icons.shopping_bag_outlined, 
-                          title: "Purchases", 
+                          title: "Purchases (Order History)", 
                           isSelected: true,
-                          onTap: () {},
+                          onTap: () {
+                            Navigator.push(context, MaterialPageRoute(builder: (context) => const OrderHistoryScreen()));
+                          },
                         ),
                         _buildActionItem(
                           icon: Icons.sell_outlined, 

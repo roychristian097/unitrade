@@ -1,12 +1,25 @@
 import 'dart:convert'; // Huruf 'i' harus kecil
 import 'package:http/http.dart' as http; 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'login_page.dart'; // Import file login
 import 'splash_screen.dart'; // Import file splash screen
+import 'auth_service.dart';
+import 'chat_service.dart';
+import 'admin_service.dart';
 import 'theme.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthService()),
+        ChangeNotifierProvider(create: (_) => ChatService()),
+        ChangeNotifierProvider(create: (_) => AdminService()),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'marketplace_screen.dart';
 import 'services_screen.dart';
+import 'cart_screen.dart';
 import 'sell_hub_screen.dart';
 import 'dashboard_screen.dart';
 import 'chat_list_screen.dart';
@@ -20,7 +21,7 @@ class MainHub extends StatefulWidget {
 class _MainHubState extends State<MainHub> {
   int _currentIndex = 0;
   
-  final List<GlobalKey<NavigatorState>> _navigatorKeys = List.generate(5, (index) => GlobalKey<NavigatorState>());
+  final List<GlobalKey<NavigatorState>> _navigatorKeys = List.generate(6, (index) => GlobalKey<NavigatorState>());
 
   Widget _buildOffstageNavigator(int index, Widget child) {
     return Offstage(
@@ -41,13 +42,14 @@ class _MainHubState extends State<MainHub> {
       _buildOffstageNavigator(0, MarketplaceScreen(showWelcome: widget.showWelcome)),
       _buildOffstageNavigator(1, const SellHubScreen()),
       _buildOffstageNavigator(2, ChatListScreen()),
+      _buildOffstageNavigator(3, const CartScreen()),
     ];
 
     if (AuthService.currentUser != null && AuthService.currentUser!['role'] == 'ADMIN') {
-      screens.add(_buildOffstageNavigator(3, AdminDashboardScreen()));
-      screens.add(_buildOffstageNavigator(4, DashboardScreen()));
+      screens.add(_buildOffstageNavigator(4, AdminDashboardScreen()));
+      screens.add(_buildOffstageNavigator(5, DashboardScreen()));
     } else {
-      screens.add(_buildOffstageNavigator(3, DashboardScreen()));
+      screens.add(_buildOffstageNavigator(4, DashboardScreen()));
     }
 
     return screens;
@@ -105,13 +107,13 @@ class _MainHubState extends State<MainHub> {
             _buildBottomNavIcon(Icons.storefront, "Home", 0),
             _buildBottomNavIcon(Icons.add_box_outlined, "Sell", 1),
             _buildBottomNavIcon(Icons.chat_bubble_outline, "Chat", 2),
-            _buildBottomNavIcon(Icons.shopping_cart_outlined, "Cart", -1),
+            _buildBottomNavIcon(Icons.shopping_cart_outlined, "Cart", 3),
             if (AuthService.currentUser != null && AuthService.currentUser!['role'] == 'ADMIN')
-              _buildBottomNavIcon(Icons.admin_panel_settings, "Admin", 3),
+              _buildBottomNavIcon(Icons.admin_panel_settings, "Admin", 4),
             _buildBottomNavIcon(
               Icons.person_outline, 
               "Profile", 
-              AuthService.currentUser != null && AuthService.currentUser!['role'] == 'ADMIN' ? 4 : 3
+              AuthService.currentUser != null && AuthService.currentUser!['role'] == 'ADMIN' ? 5 : 4
             ),
           ],
         ),

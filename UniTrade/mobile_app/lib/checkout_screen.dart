@@ -1,165 +1,206 @@
-﻿import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'theme.dart';
-import 'auth_service.dart';
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'order_service.dart';
+import 'payment_screen.dart';
 
 class CheckoutScreen extends StatefulWidget {
-  final String productName;
-  final int productId;
-  final int price;
+  final int totalPrice;
 
-  const CheckoutScreen({
-    super.key,
-    required this.productName,
-    required this.productId,
-    required this.price,
-  });
+  const CheckoutScreen({Key? key, required this.totalPrice}) : super(key: key);
 
   @override
   State<CheckoutScreen> createState() => _CheckoutScreenState();
 }
 
 class _CheckoutScreenState extends State<CheckoutScreen> {
-  String _selectedPaymentMethod = 'POINTS';
-  bool _isProcessing = false;
+  String _selectedPaymentMethod = 'QRIS';
+  bool _isLoading = false;
+  final TextEditingController _addressController = TextEditingController();
+
+  @override
+  void dispose() {
+    _addressController.dispose();
+    super.dispose();
+  }
 
   Future<void> _processCheckout() async {
-    setState(() => _isProcessing = true);
-    
-    // Simulate network delay for smooth UI
-    await Future.delayed(Duration(seconds: 2));
+    if (_addressController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Tolong isi lokasi / alamat pengiriman terlebih dahulu.'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
 
     try {
-      final token = AuthService.token;
-      if (token == null) throw Exception("Please login first");
-
-      final response = await http.post(
-        Uri.parse('${AuthService.baseUrl}/checkout'),
-        headers: {'Authorization': 'Bearer $token'},
-        // Simplification: In a real app we'd pass payload here
-      );
-
-      if (!mounted) return;
+      final response = await OrderService.checkout(_selectedPaymentMethod, _addressController.text.trim());
+      final int orderId = response['order_id'];
       
-      // Usually backend returns success or not. For now we assume success
-      // Show success dialog
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => AlertDialog(
-          backgroundColor: context.colors.cardBg,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.radiusCard)),
-          title: Icon(Icons.check_circle, color: Colors.greenAccent, size: 60),
-          content: Text(
-            "Order Placed Successfully!",
-            textAlign: TextAlign.center,
-            style: TextStyle(color: context.colors.textPrimary, fontSize: 18, fontWeight: FontWeight.bold),
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PaymentScreen(
+              orderId: orderId,
+              paymentMethod: _selectedPaymentMethod,
+              totalAmount: widget.totalPrice,
+            ),
           ),
-          actions: [
-            Center(
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context); // Close dialog
-                  Navigator.pop(context); // Go back to previous screen
-                },
-                child: Text("Back to App"),
-              ),
-            )
-          ],
-        ),
-      );
+        );
+      }
     } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Checkout failed: $e'), backgroundColor: Colors.red),
+        );
+      }
     } finally {
       if (mounted) {
-        setState(() => _isProcessing = false);
+        setState(() {
+          _isLoading = false;
+        });
       }
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: context.colors.background,
-      appBar: AppBar(
-        title: Text("Checkout"),
-      ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildPaymentOption(String title, String method, IconData icon) {
+    final isSelected = _selectedPaymentMethod == method;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedPaymentMethod = method;
+        });
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFFE67E22).withOpacity(0.1) : const Color(0xFF2A2A2E),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? const Color(0xFFE67E22) : Colors.transparent,
+            width: 2,
+          ),
+        ),
+        child: Row(
           children: [
-            Text("Order Summary", style: TextStyle(color: context.colors.textPrimary, fontSize: 20, fontWeight: FontWeight.bold)),
-            SizedBox(height: 16),
-            GlassContainer(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(widget.productName, style: TextStyle(color: context.colors.textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
-                  SizedBox(height: 8),
-                  Divider(color: context.colors.border),
-                  SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text("Total", style: TextStyle(color: context.colors.textMuted, fontSize: 16)),
-                      Text("Rp ${widget.price}", style: TextStyle(color: context.colors.primary, fontSize: 20, fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: 32),
-            Text("Payment Method", style: TextStyle(color: context.colors.textPrimary, fontSize: 20, fontWeight: FontWeight.bold)),
-            SizedBox(height: 16),
-            _buildPaymentOption("UniTrade Points", "POINTS", Icons.stars, context.colors.accent),
-            SizedBox(height: 12),
-            _buildPaymentOption("Manual Transfer", "MANUAL", Icons.account_balance, Colors.blueAccent),
-            SizedBox(height: 48),
-            SizedBox(
-              width: double.infinity,
-              height: 56,
-              child: ElevatedButton(
-                onPressed: _isProcessing ? null : _processCheckout,
-                style: ElevatedButton.styleFrom(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.radiusButton)),
+            Icon(icon, color: isSelected ? const Color(0xFFE67E22) : Colors.grey, size: 28),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(
+                  color: isSelected ? Colors.white : Colors.grey[400],
+                  fontSize: 16,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                 ),
-                child: _isProcessing 
-                    ? CircularProgressIndicator(color: context.colors.textPrimary)
-                    : Text("Confirm Payment", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               ),
             ),
+            if (isSelected)
+              const Icon(Icons.check_circle, color: Color(0xFFE67E22)),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildPaymentOption(String title, String value, IconData icon, Color iconColor) {
-    final isSelected = _selectedPaymentMethod == value;
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedPaymentMethod = value;
-        });
-      },
-      child: GlassContainer(
-        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
+  @override
+  Widget build(BuildContext context) {
+    final formatCurrency = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
+
+    return Scaffold(
+      backgroundColor: const Color(0xFF0F0F11),
+      appBar: AppBar(
+        title: const Text('Checkout'),
+        backgroundColor: const Color(0xFF1E1E24),
+        elevation: 0,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, color: iconColor, size: 28),
-            SizedBox(width: 16),
-            Expanded(child: Text(title, style: TextStyle(color: context.colors.textPrimary, fontSize: 16, fontWeight: FontWeight.w600))),
-            Radio<String>(
-              value: value,
-              groupValue: _selectedPaymentMethod,
-              activeColor: context.colors.primary,
-              onChanged: (val) {
-                if (val != null) setState(() => _selectedPaymentMethod = val);
-              },
+            const Text(
+              'Order Summary',
+              style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
             ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E1E24),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Total Payment', style: TextStyle(color: Colors.grey[400], fontSize: 16)),
+                  Text(
+                    formatCurrency.format(widget.totalPrice),
+                    style: const TextStyle(color: Color(0xFFE67E22), fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 32),
+            const Text(
+              'Select Payment Method',
+              style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            _buildPaymentOption('QRIS (E-Wallet / Bank)', 'QRIS', Icons.qr_code_scanner),
+            _buildPaymentOption('Cash on Delivery (COD)', 'COD', Icons.money),
+            const SizedBox(height: 24),
+            const Text(
+              'Lokasi Pengiriman / Ketemuan',
+              style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _addressController,
+              style: const TextStyle(color: Colors.white),
+              maxLines: 3,
+              decoration: InputDecoration(
+                hintText: _selectedPaymentMethod == 'QRIS' 
+                    ? 'Masukkan Alamat Lengkap Pengiriman (Rumah/Kos)'
+                    : 'Masukkan Lokasi Ketemuan di Kampus (Misal: Kantin)',
+                hintStyle: TextStyle(color: Colors.grey[600]),
+                filled: true,
+                fillColor: const Color(0xFF1E1E24),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
           ],
+        ),
+      ),
+      bottomNavigationBar: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: const BoxDecoration(
+          color: Color(0xFF1E1E24),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: SafeArea(
+          child: SizedBox(
+            width: double.infinity,
+            height: 50,
+            child: ElevatedButton(
+              onPressed: _isLoading ? null : _processCheckout,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFE67E22),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: _isLoading
+                  ? const CircularProgressIndicator(color: Colors.white)
+                  : const Text('Proceed to Payment', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            ),
+          ),
         ),
       ),
     );

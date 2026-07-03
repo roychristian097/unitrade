@@ -1,8 +1,9 @@
 import 'theme.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'theme.dart';
+import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
+import 'cart_service.dart';
 import 'checkout_screen.dart';
 import 'marketplace_screen.dart'; // import to reuse Product and formatCurrency
 import 'auth_service.dart';
@@ -276,7 +277,18 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             Expanded(
               flex: 2,
               child: ElevatedButton.icon(
-                onPressed: () {},
+                onPressed: () async {
+                  try {
+                    await CartService.addToCart(widget.product.id, quantity: 1);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("Berhasil ditambahkan ke keranjang")),
+                    );
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("Gagal menambahkan: $e")),
+                    );
+                  }
+                },
                 icon: Icon(Icons.shopping_cart_outlined, color: context.textColor, size: 18),
                 label: Text("Add to Cart", style: TextStyle(color: context.textColor, fontWeight: FontWeight.bold)),
                 style: ElevatedButton.styleFrom(

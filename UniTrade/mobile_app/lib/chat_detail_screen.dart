@@ -1,5 +1,4 @@
-﻿import 'theme.dart';
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'chat_service.dart';
 import 'auth_service.dart';
 
@@ -48,11 +47,11 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         _historyFuture = ChatService.getChatHistory(widget.otherUserId, widget.productId);
       });
       // Delay to let listview rebuild, then scroll to bottom
-      Future.delayed(Duration(milliseconds: 100), () {
+      Future.delayed(const Duration(milliseconds: 100), () {
         if (_scrollController.hasClients) {
           _scrollController.animateTo(
             _scrollController.position.maxScrollExtent,
-            duration: Duration(milliseconds: 300),
+            duration: const Duration(milliseconds: 300),
             curve: Curves.easeOut,
           );
         }
@@ -71,17 +70,17 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     final myId = AuthService.currentUser != null ? AuthService.currentUser!['id'] : 0;
 
     return Scaffold(
-      backgroundColor: context.colors.background,
+      backgroundColor: const Color(0xFF0F0F11),
       appBar: AppBar(
-        backgroundColor: context.colors.cardBg,
+        backgroundColor: const Color(0xFF1E1E22),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(widget.otherUserName, style: TextStyle(color: context.colors.textPrimary, fontSize: 16)),
-            Text(widget.productName, style: TextStyle(color: context.colors.primary, fontSize: 12)),
+            Text(widget.otherUserName, style: const TextStyle(color: Colors.white, fontSize: 16)),
+            Text(widget.productName, style: const TextStyle(color: Color(0xFFE67E22), fontSize: 12)),
           ],
         ),
-        iconTheme: IconThemeData(color: context.colors.textPrimary),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Column(
         children: [
@@ -90,16 +89,16 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
               future: _historyFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(child: CircularProgressIndicator(color: context.colors.primary));
+                  return const Center(child: CircularProgressIndicator(color: Color(0xFFE67E22)));
                 } else if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}', style: TextStyle(color: Colors.red)));
+                  return Center(child: Text('Error: ${snapshot.error}', style: const TextStyle(color: Colors.red)));
                 }
 
                 final messages = snapshot.data ?? [];
                 // Reverse to show bottom up? Wait, if we use listview builder, it shows top-down.
                 return ListView.builder(
                   controller: _scrollController,
-                  padding: EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(16),
                   itemCount: messages.length,
                   itemBuilder: (context, index) {
                     final msg = messages[index];
@@ -108,10 +107,10 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                     return Align(
                       alignment: isMine ? Alignment.centerRight : Alignment.centerLeft,
                       child: Container(
-                        margin: EdgeInsets.only(bottom: 12),
-                        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                         decoration: BoxDecoration(
-                          color: isMine ? context.colors.primary : Color(0xFF2A2A30),
+                          color: isMine ? const Color(0xFFE67E22) : const Color(0xFF2A2A30),
                           borderRadius: BorderRadius.only(
                             topLeft: const Radius.circular(12),
                             topRight: const Radius.circular(12),
@@ -121,7 +120,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                         ),
                         child: Text(
                           msg['message'] ?? '',
-                          style: TextStyle(color: context.colors.textPrimary, fontSize: 14),
+                          style: const TextStyle(color: Colors.white, fontSize: 14),
                         ),
                       ),
                     );
@@ -131,10 +130,10 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
             ),
           ),
           Container(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: context.colors.cardBg,
-              border: Border(top: BorderSide(color: context.colors.textPrimary.withValues(alpha: 0.05))),
+              color: const Color(0xFF1E1E22),
+              border: Border(top: BorderSide(color: Colors.white.withOpacity(0.05))),
             ),
             child: SafeArea(
               child: Row(
@@ -142,28 +141,28 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                   Expanded(
                     child: TextField(
                       controller: _msgController,
-                      style: TextStyle(color: context.colors.textPrimary),
+                      style: const TextStyle(color: Colors.white),
                       decoration: InputDecoration(
                         hintText: "Ketik pesan...",
                         hintStyle: TextStyle(color: Colors.grey[600]),
                         filled: true,
-                        fillColor: Color(0xFF2A2A30),
+                        fillColor: const Color(0xFF2A2A30),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       ),
                       onSubmitted: (_) => _sendMessage(),
                     ),
                   ),
-                  SizedBox(width: 8),
+                  const SizedBox(width: 8),
                   Container(
-                    decoration: BoxDecoration(
-                      color: context.colors.primary,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFE67E22),
                       shape: BoxShape.circle,
                     ),
                     child: IconButton(
                       icon: _isSending
-                          ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: context.colors.textPrimary, strokeWidth: 2))
-                          : Icon(Icons.send, color: context.colors.textPrimary, size: 20),
+                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                          : const Icon(Icons.send, color: Colors.white, size: 20),
                       onPressed: _isSending ? null : _sendMessage,
                     ),
                   ),
