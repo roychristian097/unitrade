@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'order_service.dart';
 import 'receipt_screen.dart';
+import 'auth_service.dart';
 
 class OrderHistoryScreen extends StatefulWidget {
   const OrderHistoryScreen({Key? key}) : super(key: key);
@@ -115,10 +116,14 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                                 color: Colors.grey[800],
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              child: firstItem['image_url'] != null
+                              child: (firstItem['image_url'] != null && firstItem['image_url'].toString().isNotEmpty)
                                   ? ClipRRect(
                                       borderRadius: BorderRadius.circular(8),
-                                      child: Image.network(firstItem['image_url'], fit: BoxFit.cover,
+                                      child: Image.network(
+                                        firstItem['image_url'].toString().startsWith('http')
+                                            ? firstItem['image_url']
+                                            : '${AuthService.baseUrl}${firstItem['image_url']}',
+                                        fit: BoxFit.cover,
                                         errorBuilder: (context, error, stackTrace) => const Icon(Icons.image_not_supported, color: Colors.grey),
                                       ),
                                     )
@@ -192,7 +197,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                               backgroundColor: const Color(0xFFE67E22),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                             ),
-                            child: const Text('Lihat Detail', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                            child: const Text('Lihat Detail', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
                           ),
                         ],
                       ),

@@ -5,7 +5,7 @@ class AuthService {
   static String? token;
   static Map<String, dynamic>? currentUser;
 
-  static const String baseUrl = 'http://192.168.110.199:8000';
+  static const String baseUrl = 'http://192.168.1.3:8000';
 
   static Future<void> login(String email, String password) async {
     final uri = Uri.parse('$baseUrl/login');

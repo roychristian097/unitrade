@@ -12,6 +12,7 @@ import 'wishlist_screen.dart';
 import 'notification_screen.dart';
 import 'services_screen.dart' hide formatCurrency, CurrencyInputFormatter;
 import 'service_detail_screen.dart';
+import 'cart_screen.dart';
 
 class CurrencyInputFormatter extends TextInputFormatter {
   @override
@@ -176,7 +177,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
       if (!_includeAllJabodetabek && _selectedJabodetabekCampus != 'Pilih Kampus') {
         queryParams['campus'] = _selectedJabodetabekCampus;
       }
-      final uri = Uri.http('192.168.110.199:8000', '/products', queryParams);
+      final uri = Uri.http('192.168.1.3:8000', '/products', queryParams);
 
       final response = await http.get(uri).timeout(Duration(seconds: 5));
 
@@ -194,7 +195,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
 
   Future<void> fetchCampuses() async {
     try {
-      final uri = Uri.http('192.168.110.199:8000', '/campuses');
+      final uri = Uri.http('192.168.1.3:8000', '/campuses');
       final response = await http.get(uri).timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
         List jsonResponse = json.decode(response.body);
@@ -349,7 +350,12 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
             },
           ),
           IconButton(icon: Icon(Icons.favorite_border, color: Colors.grey, size: 20), onPressed: () {}),
-          IconButton(icon: Icon(Icons.shopping_cart_outlined, color: Colors.grey, size: 20), onPressed: () {}),
+          IconButton(
+            icon: Icon(Icons.shopping_cart_outlined, color: Colors.grey, size: 20), 
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) => const CartScreen()));
+            }
+          ),
         ] else ...[
           IconButton(
             icon: Icon(context.isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined, color: Colors.grey, size: 20),
@@ -1089,7 +1095,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                         child: Image.network(
                           product.imageUrl.startsWith('http')
                               ? product.imageUrl
-                              : 'http://192.168.110.199:8000${product.imageUrl}',
+                              : 'http://192.168.1.3:8000${product.imageUrl}',
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) =>
                               Icon(Icons.image_outlined, color: context.colors.border, size: 50),

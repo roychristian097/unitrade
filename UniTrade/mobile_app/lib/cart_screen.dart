@@ -7,6 +7,8 @@ import 'checkout_screen.dart';
 class CartScreen extends StatefulWidget {
   const CartScreen({Key? key}) : super(key: key);
 
+  static final ValueNotifier<bool> refreshNotifier = ValueNotifier(false);
+
   @override
   State<CartScreen> createState() => _CartScreenState();
 }
@@ -19,6 +21,19 @@ class _CartScreenState extends State<CartScreen> {
   void initState() {
     super.initState();
     _fetchCart();
+    CartScreen.refreshNotifier.addListener(_onRefreshNotifierChanged);
+  }
+
+  void _onRefreshNotifierChanged() {
+    if (mounted) {
+      _fetchCart();
+    }
+  }
+
+  @override
+  void dispose() {
+    CartScreen.refreshNotifier.removeListener(_onRefreshNotifierChanged);
+    super.dispose();
   }
 
   Future<void> _fetchCart() async {
@@ -133,7 +148,7 @@ class _CartScreenState extends State<CartScreen> {
                               borderRadius: BorderRadius.circular(8),
                               child: item['image_url'] != null && item['image_url'].toString().isNotEmpty
                                   ? Image.network(
-                                      'http://192.168.100.63:8000${item['image_url']}',
+                                      'http://192.168.1.3:8000${item['image_url']}',
                                       width: 80,
                                       height: 80,
                                       fit: BoxFit.cover,
@@ -251,7 +266,7 @@ class _CartScreenState extends State<CartScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-                      child: const Text('Checkout', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      child: const Text('Checkout', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
                     ),
                   ],
                 ),

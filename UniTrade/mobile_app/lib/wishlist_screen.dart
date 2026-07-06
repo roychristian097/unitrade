@@ -181,7 +181,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
                         child: Image.network(
                           product.imageUrl.startsWith('http')
                               ? product.imageUrl
-                              : 'http://192.168.110.199:8000${product.imageUrl}',
+                              : 'http://192.168.1.3:8000${product.imageUrl}',
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) =>
                               Icon(Icons.image_outlined, color: context.colors.border, size: 50),

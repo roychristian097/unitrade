@@ -140,7 +140,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     ? const CircularProgressIndicator(color: Colors.white)
                     : Text(
                         widget.paymentMethod == 'QRIS' ? 'Saya Sudah Bayar' : 'Selesaikan Pesanan',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                       ),
               ),
             ),

@@ -1,7 +1,6 @@
-import 'dart:convert'; // Huruf 'i' harus kecil
-import 'package:http/http.dart' as http; 
+﻿import 'dart:convert'; // Huruf 'i' harus kecil
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'login_page.dart'; // Import file login
 import 'splash_screen.dart'; // Import file splash screen
 import 'auth_service.dart';
@@ -10,16 +9,7 @@ import 'admin_service.dart';
 import 'theme.dart';
 
 void main() {
-  runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => AuthService()),
-        ChangeNotifierProvider(create: (_) => ChatService()),
-        ChangeNotifierProvider(create: (_) => AdminService()),
-      ],
-      child: const MyApp(),
-    ),
-  );
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -32,10 +22,10 @@ class MyApp extends StatelessWidget {
       builder: (context, currentMode, _) {
         return MaterialApp(
           title: 'UniTrade App',
-          debugShowCheckedModeBanner: false, 
+          debugShowCheckedModeBanner: false,
           themeMode: currentMode,
           theme: ThemeData(
-            brightness: Brightness.light, 
+            brightness: Brightness.light,
             primaryColor: const Color(0xFFE67E22),
             scaffoldBackgroundColor: const Color(0xFFF8F9FA),
             colorScheme: const ColorScheme.light(
@@ -45,7 +35,7 @@ class MyApp extends StatelessWidget {
             ),
           ),
           darkTheme: ThemeData(
-            brightness: Brightness.dark, 
+            brightness: Brightness.dark,
             primaryColor: const Color(0xFFE67E22),
             scaffoldBackgroundColor: const Color(0xFF0F0F11),
             colorScheme: const ColorScheme.dark(
@@ -54,7 +44,8 @@ class MyApp extends StatelessWidget {
               surface: Color(0xFF1E1E22),
             ),
           ),
-          home: const SplashScreen(), // Menjadikan SplashScreen sebagai halaman utama
+          home:
+              const SplashScreen(), // Menjadikan SplashScreen sebagai halaman utama
         );
       },
     );

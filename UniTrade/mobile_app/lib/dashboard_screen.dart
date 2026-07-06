@@ -7,6 +7,7 @@ import 'login_page.dart';
 import 'wishlist_screen.dart';
 import 'notification_screen.dart';
 import 'order_history_screen.dart';
+import 'cart_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -93,7 +94,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             IconButton(
               icon: Icon(Icons.shopping_cart_outlined, color: Colors.grey),
-              onPressed: () {},
+              onPressed: () {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const CartScreen()));
+              },
             ),
             Stack(
               alignment: Alignment.center,

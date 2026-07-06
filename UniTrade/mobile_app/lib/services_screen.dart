@@ -11,6 +11,7 @@ import 'marketplace_screen.dart';
 import 'service_detail_screen.dart';
 import 'wishlist_screen.dart';
 import 'notification_screen.dart';
+import 'cart_screen.dart';
 
 class CurrencyInputFormatter extends TextInputFormatter {
   @override
@@ -291,7 +292,12 @@ class _ServicesScreenState extends State<ServicesScreen> {
           IconButton(icon: Icon(Icons.favorite_border, color: Colors.grey, size: 20), onPressed: () {
             Navigator.push(context,  MaterialPageRoute(builder: (context) => WishlistScreen()));
           }),
-          IconButton(icon: Icon(Icons.shopping_cart_outlined, color: Colors.grey, size: 20), onPressed: () {}),
+          IconButton(
+            icon: Icon(Icons.shopping_cart_outlined, color: Colors.grey, size: 20), 
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) => const CartScreen()));
+            }
+          ),
         ] else ...[
           ValueListenableBuilder<ThemeMode>(valueListenable: ThemeManager.themeNotifier, builder: (_, mode, _) { return IconButton(icon: Icon(mode == ThemeMode.dark ? Icons.light_mode_outlined : Icons.dark_mode_outlined, color: context.colors.primary, size: 20), onPressed: () { ThemeManager.toggleTheme(); }); }),
         ],
@@ -860,7 +866,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
                         child: Image.network(
                           service.imageUrl.startsWith('http')
                               ? service.imageUrl
-                              : 'http://192.168.110.199:8000${service.imageUrl}',
+                              : 'http://192.168.1.3:8000${service.imageUrl}',
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) =>
                               Icon(Icons.build_circle_outlined, color: context.colors.border, size: 50),
@@ -965,7 +971,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
               child: Image.network(
                 service.imageUrl.startsWith('http')
                     ? service.imageUrl
-                    : 'http://192.168.110.199:8000${service.imageUrl}',
+                    : 'http://192.168.1.3:8000${service.imageUrl}',
                 width: double.infinity,
                 height: 200,
                 fit: BoxFit.cover,

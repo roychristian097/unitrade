@@ -94,6 +94,26 @@ def init_db():
     
     # Auto-migrate: Add new columns if they don't exist
     try:
+        cursor.execute("ALTER TABLE users ADD COLUMN points INTEGER DEFAULT 0")
+    except sqlite3.OperationalError:
+        pass
+
+    try:
+        cursor.execute("ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'STUDENT'")
+    except sqlite3.OperationalError:
+        pass
+
+    try:
+        cursor.execute("ALTER TABLE users ADD COLUMN verification_status TEXT DEFAULT 'APPROVED'")
+    except sqlite3.OperationalError:
+        pass
+
+    try:
+        cursor.execute("ALTER TABLE users ADD COLUMN student_id TEXT")
+    except sqlite3.OperationalError:
+        pass
+
+    try:
         cursor.execute("ALTER TABLE products ADD COLUMN item_type TEXT DEFAULT 'Barang'")
     except sqlite3.OperationalError:
         pass
@@ -282,8 +302,8 @@ async def register(request: RegisterRequest):
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
     try:
-        cursor.execute("INSERT INTO users (name, email, password_hash, campus) VALUES (?, ?, ?, ?)", 
-            (request.name, request.email, hash_password(request.password), request.campus))
+        cursor.execute("INSERT INTO users (name, email, password_hash, campus, verification_status, role, points) VALUES (?, ?, ?, ?, ?, ?, ?)", 
+            (request.name, request.email, hash_password(request.password), request.campus, 'APPROVED', 'STUDENT', 100))
         conn.commit()
         return {"message": "User registered successfully"}
     except sqlite3.IntegrityError:
@@ -738,21 +758,6 @@ async def get_user_listings(request: Request):
                 
     return {"products": products, "services": services}
 
-class OrderCreate(BaseModel):
-    total_amount: int
-    payment_method: str
-
-@app.post("/checkout")
-async def checkout(request: Request, order: OrderCreate):
-    current_user = get_current_user(request)
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("INSERT INTO orders (buyer_id, total_amount, payment_method) VALUES (?, ?, ?)",
-        (current_user["user_id"], order.total_amount, order.payment_method))
-    conn.commit()
-    conn.close()
-    return {"message": "Order created successfully"}
-
 @app.get("/user/profile")
 async def user_profile(request: Request):
     current_user = get_current_user(request)
@@ -767,75 +772,6 @@ async def user_profile(request: Request):
     raise HTTPException(status_code=404, detail="User not found")
 
 # WISHLIST ENDPOINTS
-@app.get("/wishlist")
-async def get_wishlist(request: Request):
-    current_user = get_current_user(request)
-    conn = sqlite3.connect(DB_FILE)
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
-    cursor.execute('''
-        SELECT p.*, u.name as seller_name, u.campus as seller_campus 
-        FROM wishlists w
-        JOIN products p ON w.product_id = p.id
-        JOIN users u ON p.seller_id = u.id
-        WHERE w.user_id = ?
-        ORDER BY w.created_at DESC
-    ''', (current_user["user_id"],))
-    rows = cursor.fetchall()
-    conn.close()
-
-    results = []
-    for row in rows:
-        results.append({
-            "id": row["id"],
-            "seller_id": row["seller_id"],
-            "seller_name": row["seller_name"],
-            "seller_campus": row["seller_campus"],
-            "name": row["name"],
-            "description": row["description"],
-            "price": row["price"],
-            "category": row["category"],
-            "condition": row["condition"],
-            "campus": row["campus"],
-            "tags": json.loads(row["tags"]) if row["tags"] else [],
-            "image_url": row["image_url"]
-        })
-
-    return results
-
-@app.post("/wishlist/{product_id}")
-async def toggle_wishlist(request: Request, product_id: int):
-    current_user = get_current_user(request)
-    user_id = current_user["user_id"]
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    
-    # Check if already exists
-    cursor.execute("SELECT id FROM wishlists WHERE user_id = ? AND product_id = ?", (user_id, product_id))
-    existing = cursor.fetchone()
-    
-    if existing:
-        cursor.execute("DELETE FROM wishlists WHERE id = ?", (existing[0],))
-        status = "removed"
-    else:
-        cursor.execute("INSERT INTO wishlists (user_id, product_id) VALUES (?, ?)", (user_id, product_id))
-        status = "added"
-        
-    conn.commit()
-    conn.close()
-    return {"status": status}
-
-@app.get("/wishlist/{product_id}/check")
-async def check_wishlist(request: Request, product_id: int):
-    current_user = get_current_user(request)
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("SELECT id FROM wishlists WHERE user_id = ? AND product_id = ?", (current_user["user_id"], product_id))
-    existing = cursor.fetchone()
-    conn.close()
-    return {"is_wishlisted": bool(existing)}
-
-# NOTIFICATIONS ENDPOINTS
 @app.get("/notifications")
 async def get_notifications(request: Request):
     current_user = get_current_user(request)
@@ -1189,7 +1125,7 @@ async def checkout(request: Request, checkout_data: CheckoutRequest):
         conn.close()
         raise HTTPException(status_code=400, detail="Cart is empty")
         
-    total_amount = sum(item["price"] * item["quantity"] for item in cart_items)
+    total_amount = sum(int(item["price"]) * int(item["quantity"]) for item in cart_items)
     
     # Buat pesanan baru
     cursor.execute(
@@ -1297,3 +1233,59 @@ async def get_orders(request: Request):
         
     conn.close()
     return result
+
+@app.get("/wishlist")
+async def get_wishlist(request: Request):
+    current_user = get_current_user(request)
+    conn = sqlite3.connect(DB_FILE)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT p.* 
+        FROM wishlists w
+        JOIN products p ON w.product_id = p.id
+        WHERE w.user_id = ?
+    ''', (current_user["user_id"],))
+    items = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    
+    for item in items:
+        try:
+            item["tags"] = json.loads(item["tags"])
+        except:
+            item["tags"] = []
+            
+    return {"items": items}
+
+@app.post("/wishlist/{product_id}")
+async def toggle_wishlist(request: Request, product_id: int):
+    current_user = get_current_user(request)
+    user_id = current_user["user_id"]
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT id FROM wishlists WHERE user_id = ? AND product_id = ?", (user_id, product_id))
+    existing = cursor.fetchone()
+    
+    if existing:
+        cursor.execute("DELETE FROM wishlists WHERE id = ?", (existing[0],))
+        message = "Removed from wishlist"
+    else:
+        cursor.execute("INSERT INTO wishlists (user_id, product_id) VALUES (?, ?)", (user_id, product_id))
+        message = "Added to wishlist"
+        
+    conn.commit()
+    conn.close()
+    return {"message": message}
+
+@app.get("/wishlist/{product_id}/check")
+async def check_wishlist(request: Request, product_id: int):
+    current_user = get_current_user(request)
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT id FROM wishlists WHERE user_id = ? AND product_id = ?", (current_user["user_id"], product_id))
+    existing = cursor.fetchone()
+    conn.close()
+    
+    return {"is_wishlisted": bool(existing)}

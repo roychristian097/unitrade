@@ -94,7 +94,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
             ClipRRect(
               borderRadius: BorderRadius.circular(16),
               child: Image.network(
-                'http://192.168.110.199:8000${widget.service.imageUrl}',
+                'http://192.168.1.3:8000${widget.service.imageUrl}',
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) =>
                     Center(child: Icon(Icons.image_outlined, color: context.colors.border, size: 80)),
@@ -164,9 +164,57 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                   );
                 },
                 icon: Icon(Icons.chat_bubble_outline, color: context.colors.textPrimary, size: 18),
-                label: Text("Chat with Freelancer", style: TextStyle(color: context.colors.textPrimary, fontWeight: FontWeight.bold)),
+                label: const Text("Chat with Freelancer", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: context.colors.primary,
+                  backgroundColor: const Color(0xFF2A2A2E), // Changed color so Pesan Jasa stands out
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      backgroundColor: const Color(0xFF1E1E24),
+                      title: const Text("Pesan Jasa", style: TextStyle(color: Colors.white)),
+                      content: const Text(
+                        "Pemesanan jasa dilakukan dengan berdiskusi langsung dengan penyedia jasa mengenai detail pekerjaan dan jadwal. Silakan hubungi penyedia jasa via chat.",
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text("Batal", style: TextStyle(color: Colors.grey)),
+                        ),
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            Navigator.push(context, 
+                              MaterialPageRoute(
+                                builder: (context) => ChatDetailScreen(
+                                  otherUserId: widget.service.sellerId,
+                                  otherUserName: widget.service.sellerName,
+                                  productId: widget.service.id,
+                                  productName: widget.service.title,
+                                ),
+                              ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFE67E22)),
+                          child: const Text("Hubungi via Chat", style: TextStyle(color: Colors.white)),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.handshake_outlined, color: Colors.white, size: 18),
+                label: const Text("Pesan Jasa", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFE67E22),
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                 ),
@@ -463,7 +511,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
     );
     if (confirm != true) return;
     try {
-      final uri = Uri.http('192.168.110.199:8000', '/services/${widget.service.id}');
+      final uri = Uri.http('192.168.1.3:8000', '/services/${widget.service.id}');
       final response = await http.delete(uri);
       if (response.statusCode == 200) {
         if (mounted) {

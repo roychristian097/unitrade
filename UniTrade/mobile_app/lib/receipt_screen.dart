@@ -169,7 +169,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                   backgroundColor: const Color(0xFFE67E22),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                child: Text(widget.fromHistory ? 'Kembali' : 'Kembali ke Beranda', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                child: Text(widget.fromHistory ? 'Kembali' : 'Kembali ke Beranda', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
               ),
             ),
           ],

@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
+import 'wishlist_service.dart';
+import 'wishlist_screen.dart';
 import 'cart_service.dart';
 import 'checkout_screen.dart';
 import 'marketplace_screen.dart'; // import to reuse Product and formatCurrency
@@ -11,6 +13,7 @@ import 'chat_detail_screen.dart';
 import 'chat_list_screen.dart';
 import 'sell_item_screen.dart';
 import 'notification_screen.dart';
+import 'cart_screen.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final Product product;
@@ -83,7 +86,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
   Future<void> _fetchRelatedProducts() async {
     try {
-      final uri = Uri.http('192.168.110.199:8000', '/products');
+      final uri = Uri.http('192.168.1.3:8000', '/products');
       final response = await http.get(uri).timeout(Duration(seconds: 5));
 
       if (response.statusCode == 200) {
@@ -199,7 +202,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       body: Center(
                         child: InteractiveViewer(
                           child: Image.network(
-                            'http://192.168.110.199:8000${widget.product.imageUrl}',
+                            'http://192.168.1.3:8000${widget.product.imageUrl}',
                             fit: BoxFit.contain,
                           ),
                         ),
@@ -211,7 +214,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(16),
                 child: Image.network(
-                  'http://192.168.110.199:8000${widget.product.imageUrl}',
+                  'http://192.168.1.3:8000${widget.product.imageUrl}',
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) =>
                       Center(child: Icon(Icons.image_outlined, color: context.textMuted, size: 80)),
@@ -280,6 +283,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 onPressed: () async {
                   try {
                     await CartService.addToCart(widget.product.id, quantity: 1);
+                    CartScreen.refreshNotifier.value = !CartScreen.refreshNotifier.value;
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text("Berhasil ditambahkan ke keranjang")),
                     );
@@ -331,7 +335,22 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               ),
               child: IconButton(
                 icon: Icon(Icons.favorite_border, color: context.textColor),
-                onPressed: () {},
+                onPressed: () async {
+                  try {
+                    await WishlistService.addToWishlist(widget.product.id);
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text("Berhasil ditambahkan ke Wishlist")),
+                      );
+                    }
+                  } catch (e) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text("Gagal: $e")),
+                      );
+                    }
+                  }
+                },
               ),
             )
           ],
@@ -576,7 +595,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       ClipRRect(
                         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
                         child: Image.network(
-                          'http://192.168.110.199:8000${product.imageUrl}',
+                          'http://192.168.1.3:8000${product.imageUrl}',
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) =>
                               Center(child: Icon(Icons.image_outlined, color: context.textMuted, size: 50)),
@@ -692,8 +711,28 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             Navigator.push(context,  MaterialPageRoute(builder: (context) => ChatListScreen()));
           }),
           SizedBox(width: 32),
-          IconButton(icon: Icon(Icons.favorite_border, color: context.textMuted, size: 20), onPressed: () {}),
-          IconButton(icon: Icon(Icons.shopping_cart_outlined, color: context.textMuted, size: 20), onPressed: () {}),
+          IconButton(icon: Icon(Icons.favorite_border, color: context.textMuted, size: 20), onPressed: () async {
+            try {
+              await WishlistService.addToWishlist(widget.product.id);
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text("Berhasil ditambahkan ke Wishlist")),
+                );
+              }
+            } catch (e) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text("Gagal: $e")),
+                );
+              }
+            }
+          }),
+          IconButton(
+            icon: Icon(Icons.shopping_cart_outlined, color: context.textMuted, size: 20), 
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) => const CartScreen()));
+            }
+          ),
         ],
         IconButton(
           icon: Badge(
@@ -825,7 +864,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     );
     if (confirm != true) return;
     try {
-      final uri = Uri.http('192.168.110.199:8000', '/products/${widget.product.id}');
+      final uri = Uri.http('192.168.1.3:8000', '/products/${widget.product.id}');
       final response = await http.delete(uri);
       if (response.statusCode == 200) {
         if (mounted) {
