@@ -262,15 +262,35 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           style: TextStyle(color: context.textColor, fontSize: 28, fontWeight: FontWeight.bold),
         ),
         SizedBox(height: 12),
-        Text(
-          (() {
-            String priceText = "Rp ${formatCurrency(widget.product.price)}";
-            if (widget.product.itemType == 'Jasa' && widget.product.advancedDetails['max_price'] != null) {
-              priceText += " - Rp ${formatCurrency(int.tryParse(widget.product.advancedDetails['max_price'].toString()) ?? 0)}";
-            }
-            return priceText;
-          })(),
-          style: TextStyle(color: context.textColor, fontSize: 22, fontWeight: FontWeight.bold),
+        Row(
+          children: [
+            Text(
+              (() {
+                String priceText = "Rp ${formatCurrency(widget.product.price)}";
+                if (widget.product.itemType == 'Jasa' && widget.product.advancedDetails['max_price'] != null) {
+                  priceText += " - Rp ${formatCurrency(int.tryParse(widget.product.advancedDetails['max_price'].toString()) ?? 0)}";
+                }
+                return priceText;
+              })(),
+              style: TextStyle(color: context.textColor, fontSize: 22, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(width: 12),
+            if (widget.product.itemType == 'Barang')
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: widget.product.stock <= 0 ? Colors.red.withOpacity(0.1) : Colors.green.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  widget.product.stock <= 0 ? 'Habis' : 'Stok: ${widget.product.stock}',
+                  style: TextStyle(
+                    color: widget.product.stock <= 0 ? Colors.red : Colors.green,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+          ],
         ),
         SizedBox(height: 24),
         
@@ -281,7 +301,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             Expanded(
               flex: 2,
               child: ElevatedButton.icon(
-                onPressed: () async {
+                onPressed: (widget.product.itemType == 'Barang' && widget.product.stock <= 0) ? null : () async {
                   try {
                     await CartService.addToCart(widget.product.id, quantity: 1);
                     CartScreen.refreshNotifier.value = !CartScreen.refreshNotifier.value;
@@ -301,7 +321,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   }
                 },
                 icon: Icon(widget.product.itemType == 'Jasa' ? Icons.handshake_outlined : Icons.shopping_cart_outlined, color: context.textColor, size: 18),
-                label: Text(widget.product.itemType == 'Jasa' ? "Pesan Jasa" : "Add to Cart", style: TextStyle(color: context.textColor, fontWeight: FontWeight.bold)),
+                label: Text((widget.product.itemType == 'Barang' && widget.product.stock <= 0) ? "Sold Out" : (widget.product.itemType == 'Jasa' ? "Pesan Jasa" : "Add to Cart"), style: TextStyle(color: context.textColor, fontWeight: FontWeight.bold)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: context.colors.primary,
                   padding: EdgeInsets.symmetric(vertical: 16),

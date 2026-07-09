@@ -52,6 +52,7 @@ class Product {
   final String imageUrl;
   final String itemType;
   final Map<String, dynamic> advancedDetails;
+  final int stock;
 
   Product({
     required this.id,
@@ -68,6 +69,7 @@ class Product {
     required this.imageUrl,
     required this.itemType,
     required this.advancedDetails,
+    required this.stock,
   });
 
   factory Product.fromJson(Map<String, dynamic> json) {
