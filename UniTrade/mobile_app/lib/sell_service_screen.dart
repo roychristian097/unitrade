@@ -100,8 +100,8 @@ class _SellServiceScreenState extends State<SellServiceScreen> {
 
       final isEdit = widget.existingService != null;
       final uri = isEdit 
-          ? Uri.http('192.168.1.3:8000', '/services/${widget.existingService!.id}')
-          : Uri.http('192.168.1.3:8000', '/services');
+          ? Uri.http('192.168.18.68:8000', '/services/${widget.existingService!.id}')
+          : Uri.http('192.168.18.68:8000', '/services');
       var request = http.MultipartRequest(isEdit ? 'PUT' : 'POST', uri);
       
       if (AuthService.token != null) {

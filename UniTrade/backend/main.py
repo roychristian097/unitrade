@@ -88,7 +88,8 @@ def init_db():
             condition TEXT,
             campus TEXT,
             tags TEXT,
-            image_url TEXT
+            image_url TEXT,
+            stock INTEGER DEFAULT 1
         )
     ''')
     
@@ -127,6 +128,12 @@ def init_db():
         cursor.execute("ALTER TABLE products ADD COLUMN approval_status TEXT DEFAULT 'APPROVED'")
     except sqlite3.OperationalError:
         pass
+
+    try:
+        cursor.execute("ALTER TABLE products ADD COLUMN stock INTEGER DEFAULT 1")
+    except sqlite3.OperationalError:
+        pass
+
 
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS services (
@@ -250,7 +257,7 @@ def init_db():
             (user_id, "Sony WH-1000XM4 Headphones", "Headphones over-ear Active Noise Cancelling terbaik. Kondisi istimewa, lengkap dengan kotak.", 2700000, "Elektronik", "Mulus (Like New)", "Universitas Nasional - Jakarta Selatan, Pasar Minggu", json.dumps(["PHONES", "LIKE NEW"]), "", "APPROVED"),
             (user_id, "Jaket Hoodie Teknik Sipil 2023", "Hoodie tebal warna biru dongker. Belum pernah dipakai.", 150000, "Pakaian", "Baru (Brand New)", "Universitas Indonesia - Depok, Beji", json.dumps(["CLOTHING", "NEW"]), "", "APPROVED")
         ]
-        cursor.executemany("INSERT INTO products (seller_id, name, description, price, category, condition, campus, tags, image_url, approval_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", dummy_products)
+        cursor.executemany("INSERT INTO products (seller_id, name, description, price, category, condition, campus, tags, image_url, approval_status, stock) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)", dummy_products)
         
         dummy_services = [
             (user_id, "Jasa Rakit PC / Install Ulang Laptop", "Menerima jasa rakit PC rapi, install Windows, Linux.", "IT Support", 100000, 250000, "Universitas Nasional - Jakarta Selatan, Pasar Minggu", "Lab Komputer Blok A", "", "APPROVED"),
@@ -475,7 +482,7 @@ async def create_product(
     cursor = conn.cursor()
     cursor.execute('''
         INSERT INTO products (seller_id, name, description, price, category, condition, campus, tags, image_url, item_type, advanced_details, approval_status) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'APPROVED')
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING')
     ''', (current_user["user_id"], name, description, price, category, condition, campus, tags, image_url, item_type, advanced_details))
     conn.commit()
     new_id = cursor.lastrowid
@@ -698,7 +705,7 @@ async def create_service(
         
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
-    cursor.execute("INSERT INTO services (seller_id, title, description, category, price, max_price, campus, meetup_location, image_url, approval_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'APPROVED')",
+    cursor.execute("INSERT INTO services (seller_id, title, description, category, price, max_price, campus, meetup_location, image_url, approval_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING')",
         (current_user["user_id"], title, description, category, price, max_price, campus, meetup_location, image_url))
     conn.commit()
     conn.close()
@@ -1351,3 +1358,8 @@ async def check_wishlist(request: Request, product_id: int):
     conn.close()
     
     return {"is_wishlisted": bool(existing)}
+
+
+if __name__ == '__main__':
+    import uvicorn
+    uvicorn.run(app, host='0.0.0.0', port=8000)

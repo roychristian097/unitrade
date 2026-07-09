@@ -153,7 +153,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
       final token = AuthService.token;
       if (token == null) return;
       final response = await http.get(
-        Uri.parse('http://192.168.1.3:8000/notifications/unread_count'),
+        Uri.parse('http://192.168.18.68:8000/notifications/unread_count'),
         headers: {'Authorization': 'Bearer $token'},
       ).timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
@@ -212,7 +212,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
       if (!_includeAllJabodetabek && _selectedJabodetabekCampus != 'Pilih Kampus') {
         queryParams['campus'] = _selectedJabodetabekCampus;
       }
-      final uri = Uri.http('192.168.1.3:8000', '/products', queryParams);
+      final uri = Uri.http('192.168.18.68:8000', '/products', queryParams);
 
       final response = await http.get(uri).timeout(Duration(seconds: 5));
 
@@ -230,7 +230,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
 
   Future<void> fetchCampuses() async {
     try {
-      final uri = Uri.http('192.168.1.3:8000', '/campuses');
+      final uri = Uri.http('192.168.18.68:8000', '/campuses');
       final response = await http.get(uri).timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
         List jsonResponse = json.decode(response.body);
@@ -1141,7 +1141,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                         child: Image.network(
                           product.imageUrl.startsWith('http')
                               ? product.imageUrl
-                              : 'http://192.168.1.3:8000${product.imageUrl}',
+                              : 'http://192.168.18.68:8000${product.imageUrl}',
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) =>
                               Icon(Icons.image_outlined, color: context.colors.border, size: 50),

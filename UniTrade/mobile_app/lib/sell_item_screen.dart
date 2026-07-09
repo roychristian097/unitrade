@@ -25,6 +25,7 @@ class _SellItemScreenState extends State<SellItemScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _descController = TextEditingController();
   final TextEditingController _priceController = TextEditingController();
+  final TextEditingController _stockController = TextEditingController(text: '1');
   final TextEditingController _campusController = TextEditingController(text: "Universitas Nasional - Jakarta Selatan, Pasar Minggu");
 
   // Advanced details for Barang
@@ -107,8 +108,8 @@ class _SellItemScreenState extends State<SellItemScreen> {
 
       final isEdit = widget.existingProduct != null;
       final uri = isEdit 
-          ? Uri.http('192.168.1.3:8000', '/products/${widget.existingProduct!.id}')
-          : Uri.http('192.168.1.3:8000', '/products');
+          ? Uri.http('192.168.18.68:8000', '/products/${widget.existingProduct!.id}')
+          : Uri.http('192.168.18.68:8000', '/products');
       var request = http.MultipartRequest(isEdit ? 'PUT' : 'POST', uri);
 
       if (AuthService.token != null) {
@@ -118,6 +119,7 @@ class _SellItemScreenState extends State<SellItemScreen> {
       request.fields['name'] = _nameController.text;
       request.fields['description'] = _descController.text;
       request.fields['price'] = price.toString();
+      request.fields['stock'] = _stockController.text.isEmpty ? '1' : _stockController.text;
       request.fields['category'] = _selectedCategory;
       request.fields['condition'] = _selectedCondition;
       request.fields['campus'] = _campusController.text;
@@ -170,6 +172,7 @@ class _SellItemScreenState extends State<SellItemScreen> {
     _nameController.dispose();
     _descController.dispose();
     _priceController.dispose();
+    _stockController.dispose();
     _campusController.dispose();
     super.dispose();
   }
@@ -266,13 +269,40 @@ class _SellItemScreenState extends State<SellItemScreen> {
 
               SizedBox(height: 24),
               if (_itemType == 'Barang') ...[
-                _buildLabel("PRICE (Rp)"),
-                _buildTextField(
-                  controller: _priceController,
-                  hint: "e.g. 5.000.000",
-                  isNumber: true,
-                  formatters: [CurrencyInputFormatter()],
-                  validator: (val) => val!.isEmpty ? "Price is required" : null,
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildLabel("PRICE (Rp)"),
+                          _buildTextField(
+                            controller: _priceController,
+                            hint: "e.g. 5.000.000",
+                            isNumber: true,
+                            formatters: [CurrencyInputFormatter()],
+                            validator: (val) => val!.isEmpty ? "Price is required" : null,
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildLabel("STOK"),
+                          _buildTextField(
+                            controller: _stockController,
+                            hint: "e.g. 1",
+                            isNumber: true,
+                            validator: (val) => val!.isEmpty ? "Required" : null,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ] else ...[
                 Row(

@@ -86,7 +86,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
   Future<void> _fetchRelatedProducts() async {
     try {
-      final uri = Uri.http('192.168.1.3:8000', '/products');
+      final uri = Uri.http('192.168.18.68:8000', '/products');
       final response = await http.get(uri).timeout(Duration(seconds: 5));
 
       if (response.statusCode == 200) {
@@ -202,7 +202,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       body: Center(
                         child: InteractiveViewer(
                           child: Image.network(
-                            'http://192.168.1.3:8000${widget.product.imageUrl}',
+                            'http://192.168.18.68:8000${widget.product.imageUrl}',
                             fit: BoxFit.contain,
                           ),
                         ),
@@ -214,7 +214,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(16),
                 child: Image.network(
-                  'http://192.168.1.3:8000${widget.product.imageUrl}',
+                  'http://192.168.18.68:8000${widget.product.imageUrl}',
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) =>
                       Center(child: Icon(Icons.image_outlined, color: context.textMuted, size: 80)),
@@ -602,7 +602,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       ClipRRect(
                         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
                         child: Image.network(
-                          'http://192.168.1.3:8000${product.imageUrl}',
+                          'http://192.168.18.68:8000${product.imageUrl}',
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) =>
                               Center(child: Icon(Icons.image_outlined, color: context.textMuted, size: 50)),
@@ -878,7 +878,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     );
     if (confirm != true) return;
     try {
-      final uri = Uri.http('192.168.1.3:8000', '/products/${widget.product.id}');
+      final uri = Uri.http('192.168.18.68:8000', '/products/${widget.product.id}');
       final response = await http.delete(uri);
       if (response.statusCode == 200) {
         if (mounted) {
