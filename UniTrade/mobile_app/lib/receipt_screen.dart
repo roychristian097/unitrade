@@ -159,8 +159,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                   if (widget.fromHistory) {
                     Navigator.pop(context);
                   } else {
-                    Navigator.pushAndRemoveUntil(
-                      context,
+                    Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
                       MaterialPageRoute(builder: (context) => const MainHub(showWelcome: false)),
                       (route) => false,
                     );

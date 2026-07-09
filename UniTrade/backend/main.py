@@ -364,7 +364,7 @@ async def get_products(
         SELECT * FROM (
             SELECT p.id, p.seller_id, u.name as seller_name, u.campus as seller_campus,
                    p.name, p.description, p.price, p.category, p.condition, p.campus,
-                   p.tags, p.image_url, p.item_type, p.advanced_details
+                   p.tags, p.image_url, p.item_type, p.advanced_details, p.stock
             FROM products p
             JOIN users u ON p.seller_id = u.id
             WHERE p.approval_status = 'APPROVED'
@@ -374,7 +374,7 @@ async def get_products(
             SELECT s.id, s.seller_id, u.name as seller_name, u.campus as seller_campus,
                    s.title as name, s.description, s.price, s.category, 'Jasa' as condition, s.campus,
                    '["JASA"]' as tags, s.image_url, 'Jasa' as item_type, 
-                   '{"max_price": "' || IFNULL(s.max_price, '') || '", "meetup_location": "' || IFNULL(s.meetup_location, '') || '"}' as advanced_details
+                   '{"max_price": "' || IFNULL(s.max_price, '') || '", "meetup_location": "' || IFNULL(s.meetup_location, '') || '"}' as advanced_details, 1 as stock
             FROM services s
             JOIN users u ON s.seller_id = u.id
             WHERE s.approval_status = 'APPROVED'
