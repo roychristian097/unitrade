@@ -88,6 +88,7 @@ class Product {
       imageUrl: json['image_url'] ?? '',
       itemType: json['item_type'] ?? 'Barang',
       advancedDetails: json['advanced_details'] ?? {},
+      stock: json['stock'] ?? 1,
     );
   }
 }

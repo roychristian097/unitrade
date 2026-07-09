@@ -1177,12 +1177,20 @@ async def checkout(request: Request, checkout_data: CheckoutRequest):
         WHERE c.user_id = ?
     ''', (user_id,))
     
-    cart_items = cursor.fetchall()
+        cart_items = cursor.fetchall()
     
     if not cart_items:
         conn.close()
         raise HTTPException(status_code=400, detail="Cart is empty")
-        
+
+    # Cek Stok Barang
+    for item in cart_items:
+        cursor.execute("SELECT stock FROM products WHERE id = ?", (item["product_id"],))
+        product_row = cursor.fetchone()
+        if product_row and product_row["stock"] < item["quantity"]:
+            conn.close()
+            raise HTTPException(status_code=400, detail=f"Stok untuk produk '{item['name']}' tidak mencukupi (sisa: {product_row['stock']})")
+
     total_amount = sum(int(item["price"]) * int(item["quantity"]) for item in cart_items)
     
     # Buat pesanan baru
@@ -1198,6 +1206,9 @@ async def checkout(request: Request, checkout_data: CheckoutRequest):
             "INSERT INTO order_items (order_id, product_id, quantity, price_at_checkout) VALUES (?, ?, ?, ?)",
             (order_id, item["product_id"], item["quantity"], item["price"])
         )
+        
+        # Kurangi stok
+        cursor.execute("UPDATE products SET stock = stock - ? WHERE id = ?", (item["quantity"], item["product_id"]))
         # Notifikasi untuk penjual
         cursor.execute(
             "INSERT INTO notifications (user_id, title, message) VALUES (?, ?, ?)",
