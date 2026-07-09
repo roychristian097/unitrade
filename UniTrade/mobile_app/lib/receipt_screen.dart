@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'order_service.dart';
 import 'marketplace_screen.dart';
+import 'main_hub.dart';
 
 class ReceiptScreen extends StatefulWidget {
   final int orderId;
@@ -160,7 +161,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                   } else {
                     Navigator.pushAndRemoveUntil(
                       context,
-                      MaterialPageRoute(builder: (context) => const MarketplaceScreen()),
+                      MaterialPageRoute(builder: (context) => const MainHub(showWelcome: false)),
                       (route) => false,
                     );
                   }
