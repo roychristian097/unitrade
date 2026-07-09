@@ -283,7 +283,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  widget.product.stock <= 0 ? 'Habis' : 'Stok: ${widget.product.stock}',
+                  'Stok: ${widget.product.stock}',
                   style: TextStyle(
                     color: widget.product.stock <= 0 ? Colors.red : Colors.green,
                     fontWeight: FontWeight.bold,
