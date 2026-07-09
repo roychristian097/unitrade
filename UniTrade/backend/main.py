@@ -1177,7 +1177,7 @@ async def checkout(request: Request, checkout_data: CheckoutRequest):
         WHERE c.user_id = ?
     ''', (user_id,))
     
-        cart_items = cursor.fetchall()
+    cart_items = cursor.fetchall()
     
     if not cart_items:
         conn.close()
