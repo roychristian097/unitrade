@@ -19,7 +19,7 @@ class AppLogo extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Image.asset(
-          'assets/images/logo.png',
+          'assets/images/logo_mark.png',
           width: size * 1.5,
           height: size * 1.5,
           fit: BoxFit.contain,
