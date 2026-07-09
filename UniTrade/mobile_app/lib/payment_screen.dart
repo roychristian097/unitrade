@@ -138,9 +138,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 ),
                 child: _isLoading
                     ? const CircularProgressIndicator(color: Colors.white)
-                    : Text(
-                        widget.paymentMethod == 'QRIS' ? 'Saya Sudah Bayar' : 'Selesaikan Pesanan',
-                        style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                    : const Text(
+                        'Bayar',
+                        style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                       ),
               ),
             ),

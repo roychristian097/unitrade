@@ -4,14 +4,13 @@ import 'auth_service.dart';
 
 class WishlistService {
   static Future<void> addToWishlist(int productId) async {
-    final uri = Uri.parse('${AuthService.baseUrl}/wishlist');
+    final uri = Uri.parse('${AuthService.baseUrl}/wishlist/$productId');
     final response = await http.post(
       uri,
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ${AuthService.token}',
       },
-      body: json.encode({'product_id': productId}),
     ).timeout(const Duration(seconds: 10));
 
     if (response.statusCode != 200 && response.statusCode != 201) {
@@ -22,7 +21,7 @@ class WishlistService {
 
   static Future<void> removeFromWishlist(int productId) async {
     final uri = Uri.parse('${AuthService.baseUrl}/wishlist/$productId');
-    final response = await http.delete(
+    final response = await http.post(
       uri,
       headers: {
         'Content-Type': 'application/json',

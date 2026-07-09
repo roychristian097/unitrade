@@ -275,8 +275,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         SizedBox(height: 24),
         
         // Buttons
-        Row(
-          children: [
+        if (AuthService.currentUser != null && AuthService.currentUser!['id'] != widget.product.sellerId)
+          Row(
+            children: [
             Expanded(
               flex: 2,
               child: ElevatedButton.icon(
@@ -284,17 +285,23 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   try {
                     await CartService.addToCart(widget.product.id, quantity: 1);
                     CartScreen.refreshNotifier.value = !CartScreen.refreshNotifier.value;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text("Berhasil ditambahkan ke keranjang")),
-                    );
+                    if (widget.product.itemType == 'Jasa') {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text("Jasa berhasil ditambahkan ke keranjang")),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text("Berhasil ditambahkan ke keranjang")),
+                      );
+                    }
                   } catch (e) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text("Gagal menambahkan: $e")),
                     );
                   }
                 },
-                icon: Icon(Icons.shopping_cart_outlined, color: context.textColor, size: 18),
-                label: Text("Add to Cart", style: TextStyle(color: context.textColor, fontWeight: FontWeight.bold)),
+                icon: Icon(widget.product.itemType == 'Jasa' ? Icons.handshake_outlined : Icons.shopping_cart_outlined, color: context.textColor, size: 18),
+                label: Text(widget.product.itemType == 'Jasa' ? "Pesan Jasa" : "Add to Cart", style: TextStyle(color: context.textColor, fontWeight: FontWeight.bold)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: context.colors.primary,
                   padding: EdgeInsets.symmetric(vertical: 16),
@@ -694,10 +701,17 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       elevation: 0,
       title: Row(
         children: [
-          Image.asset(
-            'assets/images/logo_combined.png',
-            height: 28,
-            fit: BoxFit.contain,
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: const Color(0xFFD35400), // Dark orange background
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Image.asset(
+              'assets/images/logo_combined.png',
+              height: 24,
+              fit: BoxFit.contain,
+            ),
           ),
         ],
       ),

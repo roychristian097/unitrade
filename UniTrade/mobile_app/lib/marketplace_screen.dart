@@ -4,6 +4,7 @@ import 'theme.dart';
 import 'package:flutter/services.dart';
 import 'dart:ui';
 import 'package:http/http.dart' as http;
+import 'dart:async';
 import 'product_detail_screen.dart';
 import 'sell_item_screen.dart';
 import 'auth_service.dart';
@@ -112,6 +113,11 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
   final List<String> _categories = ['Semua Kategori', 'Elektronik', 'Pakaian', 'Otomotif', 'Jasa'];
 
   String _selectedCondition = 'Semua Kondisi';
+  
+  int _unreadNotifCount = 0;
+  Timer? _pollingTimer;
+
+  bool _isRefreshing = false;
   final List<String> _conditions = [
     'Semua Kondisi',
     'Baru (Brand New)',
@@ -137,7 +143,35 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
     _productsFuture = fetchProducts();
     _showWelcomeMessage = widget.showWelcome;
     fetchCampuses();
+    _fetchUnreadNotifs();
+    _pollingTimer = Timer.periodic(const Duration(seconds: 10), (_) => _fetchUnreadNotifs());
     MarketplaceScreen.refreshNotifier.addListener(_onRefreshNotifierChanged);
+  }
+
+  Future<void> _fetchUnreadNotifs() async {
+    try {
+      final token = AuthService.token;
+      if (token == null) return;
+      final response = await http.get(
+        Uri.parse('http://192.168.1.3:8000/notifications/unread_count'),
+        headers: {'Authorization': 'Bearer $token'},
+      ).timeout(const Duration(seconds: 5));
+      if (response.statusCode == 200) {
+        final count = json.decode(response.body)['unread_count'] ?? 0;
+        if (mounted) {
+          setState(() {
+            _unreadNotifCount = count;
+          });
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
   }
 
   void _onRefreshNotifierChanged() {
@@ -152,6 +186,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
     _searchController.dispose();
     _minPriceController.dispose();
     _maxPriceController.dispose();
+    _pollingTimer?.cancel();
     super.dispose();
   }
 
@@ -325,11 +360,17 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
       elevation: 0,
       title: Row(
         children: [
-          Image.asset(
-            'assets/images/logo_combined.png',
-            height: 28,
-            fit: BoxFit.contain,
-            color: context.isDark ? null : Colors.black,
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: const Color(0xFFD35400),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Image.asset(
+              'assets/images/logo_combined.png',
+              height: 24,
+              fit: BoxFit.contain,
+            ),
           ),
         ],
       ),
@@ -365,12 +406,17 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
           ),
         ],
         IconButton(
-          icon: Badge(
-            backgroundColor: Colors.red,
-            child: Icon(Icons.notifications_none, color: Colors.grey, size: 20),
-          ),
+          icon: _unreadNotifCount > 0 
+            ? Badge(
+                backgroundColor: Colors.red,
+                label: Text(_unreadNotifCount > 99 ? '99+' : '$_unreadNotifCount', style: const TextStyle(color: Colors.white, fontSize: 8)),
+                child: const Icon(Icons.notifications_none, color: Colors.grey, size: 20),
+              )
+            : const Icon(Icons.notifications_none, color: Colors.grey, size: 20),
           onPressed: () {
-            Navigator.push(context,  MaterialPageRoute(builder: (context) => const NotificationScreen()));
+            Navigator.push(context,  MaterialPageRoute(builder: (context) => const NotificationScreen())).then((_) {
+              _fetchUnreadNotifs();
+            });
           },
         ),
         if (isDesktop) SizedBox(width: 16),

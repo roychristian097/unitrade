@@ -210,6 +210,7 @@ def init_db():
             receiver_id INTEGER,
             product_id INTEGER,
             message TEXT,
+            is_read BOOLEAN DEFAULT 0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY(sender_id) REFERENCES users(id),
             FOREIGN KEY(receiver_id) REFERENCES users(id),
@@ -227,6 +228,12 @@ def init_db():
             FOREIGN KEY(user_id) REFERENCES users(id)
         )
     ''')
+    
+    # Try to add is_read column to messages if it doesn't exist
+    try:
+        cursor.execute("ALTER TABLE messages ADD COLUMN is_read BOOLEAN DEFAULT 0")
+    except sqlite3.OperationalError:
+        pass
     
     # Check if empty to seed data
     cursor.execute("SELECT COUNT(*) FROM users")
@@ -533,6 +540,38 @@ async def send_message(request: Request, msg: MessageCreate):
     cursor = conn.cursor()
     cursor.execute("INSERT INTO messages (sender_id, receiver_id, product_id, message) VALUES (?, ?, ?, ?)",
         (current_user["user_id"], msg.receiver_id, msg.product_id, msg.message))
+        
+    # Notifikasi pesan baru
+    cursor.execute(
+        "INSERT INTO notifications (user_id, title, message) VALUES (?, ?, ?)",
+        (msg.receiver_id, "Pesan Baru", f"Anda mendapat pesan baru.")
+    )
+    conn.commit()
+    conn.close()
+    return {"status": "success"}
+
+@app.get("/chat/unread_count")
+async def get_chat_unread_count(request: Request):
+    current_user = get_current_user(request)
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT COUNT(*) FROM messages 
+        WHERE receiver_id = ? AND is_read = 0
+    ''', (current_user["user_id"],))
+    count = cursor.fetchone()[0]
+    conn.close()
+    return {"unread_count": count}
+
+@app.post("/chat/{other_user_id}/read")
+async def mark_chat_read(request: Request, other_user_id: int):
+    current_user = get_current_user(request)
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute('''
+        UPDATE messages SET is_read = 1 
+        WHERE receiver_id = ? AND sender_id = ?
+    ''', (current_user["user_id"], other_user_id))
     conn.commit()
     conn.close()
     return {"status": "success"}
@@ -771,7 +810,19 @@ async def user_profile(request: Request):
         return dict(user)
     raise HTTPException(status_code=404, detail="User not found")
 
-# WISHLIST ENDPOINTS
+# NOTIFICATION ENDPOINTS
+@app.get("/notifications/unread_count")
+async def get_unread_notifications_count(request: Request):
+    current_user = get_current_user(request)
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT COUNT(*) FROM notifications 
+        WHERE user_id = ? AND is_read = 0
+    ''', (current_user["user_id"],))
+    count = cursor.fetchone()[0]
+    conn.close()
+    return {"unread_count": count}
 @app.get("/notifications")
 async def get_notifications(request: Request):
     current_user = get_current_user(request)
@@ -1072,7 +1123,7 @@ async def remove_from_cart(cart_id: int, request: Request):
     cursor = conn.cursor()
     
     cursor.execute("DELETE FROM carts WHERE id = ? AND user_id = ?", (cart_id, current_user["user_id"]))
-    changes = conn.total_changes
+    changes = cursor.rowcount
     conn.commit()
     conn.close()
     
@@ -1093,7 +1144,7 @@ async def update_cart_quantity(cart_id: int, cart_item: CartItemUpdate, request:
         
     cursor.execute("UPDATE carts SET quantity = ? WHERE id = ? AND user_id = ?", 
                    (cart_item.quantity, cart_id, current_user["user_id"]))
-    changes = conn.total_changes
+    changes = cursor.rowcount
     conn.commit()
     conn.close()
     
@@ -1113,7 +1164,7 @@ async def checkout(request: Request, checkout_data: CheckoutRequest):
     
     # Ambil semua barang dari keranjang
     cursor.execute('''
-        SELECT c.product_id, c.quantity, p.price 
+        SELECT c.product_id, c.quantity, p.price, p.seller_id, p.name 
         FROM carts c
         JOIN products p ON c.product_id = p.id
         WHERE c.user_id = ?
@@ -1134,11 +1185,16 @@ async def checkout(request: Request, checkout_data: CheckoutRequest):
     )
     order_id = cursor.lastrowid
     
-    # Pindahkan dari keranjang ke order_items
+    # Pindahkan dari keranjang ke order_items dan buat notifikasi
     for item in cart_items:
         cursor.execute(
             "INSERT INTO order_items (order_id, product_id, quantity, price_at_checkout) VALUES (?, ?, ?, ?)",
             (order_id, item["product_id"], item["quantity"], item["price"])
+        )
+        # Notifikasi untuk penjual
+        cursor.execute(
+            "INSERT INTO notifications (user_id, title, message) VALUES (?, ?, ?)",
+            (item["seller_id"], "Pesanan Baru", f"Barang '{item['name']}' telah dipesan.")
         )
         
     # Kosongkan keranjang
@@ -1156,7 +1212,13 @@ async def complete_order(order_id: int, request: Request):
     cursor = conn.cursor()
     
     cursor.execute("UPDATE orders SET status = 'Selesai' WHERE id = ? AND user_id = ?", (order_id, current_user["user_id"]))
-    changes = conn.total_changes
+    changes = cursor.rowcount
+    
+    if changes > 0:
+        cursor.execute(
+            "INSERT INTO notifications (user_id, title, message) VALUES (?, ?, ?)",
+            (current_user["user_id"], "Pembayaran Berhasil", f"Pesanan #{order_id} berhasil dibayar.")
+        )
     
     conn.commit()
     conn.close()

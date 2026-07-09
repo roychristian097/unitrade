@@ -71,12 +71,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
           automaticallyImplyLeading: false,
           title: Row(
             children: [
-              Image.asset(
-                'assets/images/logo_combined.png',
-                height: 28,
-                fit: BoxFit.contain,
-                color: context.isDark ? null : Colors.black,
-              ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFD35400),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Image.asset(
+                    'assets/images/logo_combined.png',
+                    height: 24,
+                    fit: BoxFit.contain,
+                  ),
+                ),
             ],
           ),
           actions: [

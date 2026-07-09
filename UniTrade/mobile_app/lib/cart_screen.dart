@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'cart_service.dart';
 import 'checkout_screen.dart';
+import 'theme.dart';
 
 class CartScreen extends StatefulWidget {
   const CartScreen({Key? key}) : super(key: key);
@@ -109,10 +110,11 @@ class _CartScreenState extends State<CartScreen> {
     final formatCurrency = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F0F11),
+      backgroundColor: context.bgColor,
       appBar: AppBar(
-        title: const Text('My Cart'),
-        backgroundColor: const Color(0xFF1E1E24),
+        title: Text('My Cart', style: TextStyle(color: context.textColor)),
+        backgroundColor: context.surfaceColor,
+        iconTheme: IconThemeData(color: context.textColor),
         elevation: 0,
       ),
       body: _isLoading
@@ -122,11 +124,11 @@ class _CartScreenState extends State<CartScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.shopping_cart_outlined, size: 80, color: Colors.grey[600]),
+                      Icon(Icons.shopping_cart_outlined, size: 80, color: context.textMuted),
                       const SizedBox(height: 16),
                       Text(
                         'Your cart is empty',
-                        style: TextStyle(color: Colors.grey[400], fontSize: 18),
+                        style: TextStyle(color: context.textMuted, fontSize: 18),
                       ),
                     ],
                   ),
@@ -137,9 +139,12 @@ class _CartScreenState extends State<CartScreen> {
                   itemBuilder: (context, index) {
                     final item = _cartItems[index];
                     return Card(
-                      color: const Color(0xFF1E1E24),
+                      color: context.surfaceColor,
                       margin: const EdgeInsets.only(bottom: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(color: context.borderColor),
+                      ),
                       child: Padding(
                         padding: const EdgeInsets.all(12),
                         child: Row(
@@ -147,23 +152,32 @@ class _CartScreenState extends State<CartScreen> {
                             ClipRRect(
                               borderRadius: BorderRadius.circular(8),
                               child: item['image_url'] != null && item['image_url'].toString().isNotEmpty
-                                  ? Image.network(
-                                      'http://192.168.1.3:8000${item['image_url']}',
-                                      width: 80,
-                                      height: 80,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (context, error, stackTrace) => Container(
-                                        width: 80,
-                                        height: 80,
-                                        color: Colors.grey[800],
-                                        child: const Icon(Icons.image_not_supported, color: Colors.grey),
-                                      ),
-                                    )
+                                  ? item['image_url'].toString().startsWith('assets/')
+                                      ? Image.asset(
+                                          item['image_url'],
+                                          width: 80,
+                                          height: 80,
+                                          fit: BoxFit.cover,
+                                        )
+                                      : Image.network(
+                                          item['image_url'].toString().startsWith('http')
+                                              ? item['image_url']
+                                              : 'http://192.168.1.3:8000${item['image_url']}',
+                                          width: 80,
+                                          height: 80,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (context, error, stackTrace) => Container(
+                                            width: 80,
+                                            height: 80,
+                                            color: context.surfaceHighlight,
+                                            child: Icon(Icons.image_not_supported, color: context.textMuted),
+                                          ),
+                                        )
                                   : Container(
                                       width: 80,
                                       height: 80,
-                                      color: Colors.grey[800],
-                                      child: const Icon(Icons.shopping_bag, color: Colors.grey),
+                                      color: context.surfaceHighlight,
+                                      child: Icon(Icons.image_not_supported, color: context.textMuted),
                                     ),
                             ),
                             const SizedBox(width: 16),
@@ -173,7 +187,7 @@ class _CartScreenState extends State<CartScreen> {
                                 children: [
                                   Text(
                                     item['name'],
-                                    style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                                    style: TextStyle(color: context.textColor, fontSize: 16, fontWeight: FontWeight.bold),
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -190,17 +204,17 @@ class _CartScreenState extends State<CartScreen> {
                                         child: Container(
                                           padding: const EdgeInsets.all(4),
                                           decoration: BoxDecoration(
-                                            color: Colors.grey[800],
+                                            color: context.surfaceHighlight,
                                             borderRadius: BorderRadius.circular(4),
                                           ),
-                                          child: const Icon(Icons.remove, color: Colors.white, size: 16),
+                                          child: Icon(Icons.remove, color: context.textColor, size: 16),
                                         ),
                                       ),
                                       Padding(
                                         padding: const EdgeInsets.symmetric(horizontal: 12),
                                         child: Text(
                                           '${item['quantity']}',
-                                          style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                                          style: TextStyle(color: context.textColor, fontSize: 16, fontWeight: FontWeight.bold),
                                         ),
                                       ),
                                       InkWell(
@@ -208,10 +222,10 @@ class _CartScreenState extends State<CartScreen> {
                                         child: Container(
                                           padding: const EdgeInsets.all(4),
                                           decoration: BoxDecoration(
-                                            color: Colors.grey[800],
+                                            color: context.surfaceHighlight,
                                             borderRadius: BorderRadius.circular(4),
                                           ),
-                                          child: const Icon(Icons.add, color: Colors.white, size: 16),
+                                          child: Icon(Icons.add, color: context.textColor, size: 16),
                                         ),
                                       ),
                                     ],
@@ -233,9 +247,10 @@ class _CartScreenState extends State<CartScreen> {
           ? null
           : Container(
               padding: const EdgeInsets.all(20),
-              decoration: const BoxDecoration(
-                color: Color(0xFF1E1E24),
-                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              decoration: BoxDecoration(
+                color: context.surfaceColor,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                border: Border(top: BorderSide(color: context.borderColor)),
               ),
               child: SafeArea(
                 child: Row(
@@ -245,10 +260,10 @@ class _CartScreenState extends State<CartScreen> {
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Total', style: TextStyle(color: Colors.grey[400], fontSize: 14)),
+                        Text('Total', style: TextStyle(color: context.textMuted, fontSize: 14)),
                         Text(
                           formatCurrency.format(_totalPrice),
-                          style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                          style: TextStyle(color: context.textColor, fontSize: 20, fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),

@@ -1,6 +1,7 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'chat_service.dart';
 import 'auth_service.dart';
+import 'theme.dart';
 
 class ChatDetailScreen extends StatefulWidget {
   final int otherUserId;
@@ -30,6 +31,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   void initState() {
     super.initState();
     _historyFuture = ChatService.getChatHistory(widget.otherUserId, widget.productId);
+    ChatService.markAsRead(widget.otherUserId);
   }
 
   void _sendMessage() async {
@@ -70,17 +72,17 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     final myId = AuthService.currentUser != null ? AuthService.currentUser!['id'] : 0;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F0F11),
+      backgroundColor: context.bgColor,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1E1E22),
+        backgroundColor: context.surfaceColor,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(widget.otherUserName, style: const TextStyle(color: Colors.white, fontSize: 16)),
+            Text(widget.otherUserName, style: TextStyle(color: context.textColor, fontSize: 16)),
             Text(widget.productName, style: const TextStyle(color: Color(0xFFE67E22), fontSize: 12)),
           ],
         ),
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: context.textColor),
       ),
       body: Column(
         children: [
@@ -110,7 +112,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                         margin: const EdgeInsets.only(bottom: 12),
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                         decoration: BoxDecoration(
-                          color: isMine ? const Color(0xFFE67E22) : const Color(0xFF2A2A30),
+                          color: isMine ? const Color(0xFFE67E22) : context.surfaceHighlight,
                           borderRadius: BorderRadius.only(
                             topLeft: const Radius.circular(12),
                             topRight: const Radius.circular(12),
@@ -120,7 +122,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                         ),
                         child: Text(
                           msg['message'] ?? '',
-                          style: const TextStyle(color: Colors.white, fontSize: 14),
+                          style: TextStyle(color: isMine ? Colors.white : context.textColor, fontSize: 14),
                         ),
                       ),
                     );
@@ -132,8 +134,8 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: const Color(0xFF1E1E22),
-              border: Border(top: BorderSide(color: Colors.white.withOpacity(0.05))),
+              color: context.surfaceColor,
+              border: Border(top: BorderSide(color: context.borderColor)),
             ),
             child: SafeArea(
               child: Row(
@@ -141,12 +143,12 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                   Expanded(
                     child: TextField(
                       controller: _msgController,
-                      style: const TextStyle(color: Colors.white),
+                      style: TextStyle(color: context.textColor),
                       decoration: InputDecoration(
                         hintText: "Ketik pesan...",
-                        hintStyle: TextStyle(color: Colors.grey[600]),
+                        hintStyle: TextStyle(color: context.textMuted),
                         filled: true,
-                        fillColor: const Color(0xFF2A2A30),
+                        fillColor: context.surfaceHighlight,
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       ),

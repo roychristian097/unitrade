@@ -5,10 +5,13 @@ import 'services_screen.dart';
 import 'cart_screen.dart';
 import 'sell_hub_screen.dart';
 import 'dashboard_screen.dart';
+import 'profile_page.dart';
 import 'chat_list_screen.dart';
 import 'admin_dashboard_screen.dart';
 import 'auth_service.dart';
+import 'chat_service.dart';
 import 'theme.dart';
+import 'dart:async';
 
 class MainHub extends StatefulWidget {
   final bool showWelcome;
@@ -20,8 +23,36 @@ class MainHub extends StatefulWidget {
 
 class _MainHubState extends State<MainHub> {
   int _currentIndex = 0;
+  int _unreadChatCount = 0;
+  Timer? _pollingTimer;
   
   final List<GlobalKey<NavigatorState>> _navigatorKeys = List.generate(6, (index) => GlobalKey<NavigatorState>());
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUnreadChats();
+    _pollingTimer = Timer.periodic(const Duration(seconds: 10), (_) => _fetchUnreadChats());
+  }
+
+  @override
+  void dispose() {
+    _pollingTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _fetchUnreadChats() async {
+    try {
+      final count = await ChatService.getUnreadCount();
+      if (mounted) {
+        setState(() {
+          _unreadChatCount = count;
+        });
+      }
+    } catch (e) {
+      // Ignore
+    }
+  }
 
   Widget _buildOffstageNavigator(int index, Widget child) {
     return Offstage(
@@ -47,9 +78,9 @@ class _MainHubState extends State<MainHub> {
 
     if (AuthService.currentUser != null && AuthService.currentUser!['role'] == 'ADMIN') {
       screens.add(_buildOffstageNavigator(4, AdminDashboardScreen()));
-      screens.add(_buildOffstageNavigator(5, DashboardScreen()));
+      screens.add(_buildOffstageNavigator(5, const ProfilePage()));
     } else {
-      screens.add(_buildOffstageNavigator(4, DashboardScreen()));
+      screens.add(_buildOffstageNavigator(4, const ProfilePage()));
     }
 
     return screens;
@@ -106,7 +137,7 @@ class _MainHubState extends State<MainHub> {
           children: [
             _buildBottomNavIcon(Icons.storefront, "Home", 0),
             _buildBottomNavIcon(Icons.add_box_outlined, "Sell", 1),
-            _buildBottomNavIcon(Icons.chat_bubble_outline, "Chat", 2),
+            _buildBottomNavIcon(Icons.chat_bubble_outline, "Chat", 2, badgeCount: _unreadChatCount),
             _buildBottomNavIcon(Icons.shopping_cart_outlined, "Cart", 3),
             if (AuthService.currentUser != null && AuthService.currentUser!['role'] == 'ADMIN')
               _buildBottomNavIcon(Icons.admin_panel_settings, "Admin", 4),
@@ -121,7 +152,7 @@ class _MainHubState extends State<MainHub> {
     );
   }
 
-  Widget _buildBottomNavIcon(IconData icon, String label, int index) {
+  Widget _buildBottomNavIcon(IconData icon, String label, int index, {int badgeCount = 0}) {
     bool isActive = _currentIndex == index;
     return InkWell(
       onTap: () {
@@ -137,7 +168,32 @@ class _MainHubState extends State<MainHub> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: isActive ? const Color(0xFFE67E22) : Colors.grey, size: 24),
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Icon(icon, color: isActive ? const Color(0xFFE67E22) : Colors.grey, size: 24),
+              if (badgeCount > 0)
+                Positioned(
+                  right: -6,
+                  top: -6,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(
+                      badgeCount > 99 ? '99+' : badgeCount.toString(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 8,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
           const SizedBox(height: 4),
           Text(
             label,

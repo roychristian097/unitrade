@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'theme.dart';
@@ -113,12 +114,37 @@ class _ServicesScreenState extends State<ServicesScreen> {
   ];
 
   late bool _showWelcomeMessage;
+  int _unreadNotifCount = 0;
+  Timer? _pollingTimer;
 
   @override
   void initState() {
     super.initState();
     _servicesFuture = fetchServices();
     _showWelcomeMessage = widget.showWelcome;
+    _fetchUnreadNotifs();
+    _pollingTimer = Timer.periodic(const Duration(seconds: 10), (_) => _fetchUnreadNotifs());
+  }
+
+  Future<void> _fetchUnreadNotifs() async {
+    try {
+      final token = AuthService.token;
+      if (token == null) return;
+      final response = await http.get(
+        Uri.parse('http://192.168.1.3:8000/notifications/unread_count'),
+        headers: {'Authorization': 'Bearer $token'},
+      ).timeout(const Duration(seconds: 5));
+      if (response.statusCode == 200) {
+        final count = json.decode(response.body)['unread_count'] ?? 0;
+        if (mounted) {
+          setState(() {
+            _unreadNotifCount = count;
+          });
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
   }
 
   @override
@@ -126,6 +152,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
     _searchController.dispose();
     _minPriceController.dispose();
     _maxPriceController.dispose();
+    _pollingTimer?.cancel();
     super.dispose();
   }
 
@@ -268,11 +295,17 @@ class _ServicesScreenState extends State<ServicesScreen> {
       elevation: 0,
       title: Row(
         children: [
-          Image.asset(
-            'assets/images/logo_combined.png',
-            height: 28,
-            fit: BoxFit.contain,
-            color: context.isDark ? null : Colors.black,
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: const Color(0xFFD35400),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Image.asset(
+              'assets/images/logo_combined.png',
+              height: 24,
+              fit: BoxFit.contain,
+            ),
           ),
         ],
       ),
@@ -302,12 +335,17 @@ class _ServicesScreenState extends State<ServicesScreen> {
           ValueListenableBuilder<ThemeMode>(valueListenable: ThemeManager.themeNotifier, builder: (_, mode, _) { return IconButton(icon: Icon(mode == ThemeMode.dark ? Icons.light_mode_outlined : Icons.dark_mode_outlined, color: context.colors.primary, size: 20), onPressed: () { ThemeManager.toggleTheme(); }); }),
         ],
         IconButton(
-          icon: Badge(
-            backgroundColor: Colors.red,
-            child: Icon(Icons.notifications_none, color: Colors.grey, size: 20),
-          ),
+          icon: _unreadNotifCount > 0 
+            ? Badge(
+                backgroundColor: Colors.red,
+                label: Text(_unreadNotifCount > 99 ? '99+' : '$_unreadNotifCount', style: const TextStyle(color: Colors.white, fontSize: 8)),
+                child: const Icon(Icons.notifications_none, color: Colors.grey, size: 20),
+              )
+            : const Icon(Icons.notifications_none, color: Colors.grey, size: 20),
           onPressed: () {
-            Navigator.push(context,  MaterialPageRoute(builder: (context) => const NotificationScreen()));
+            Navigator.push(context,  MaterialPageRoute(builder: (context) => const NotificationScreen())).then((_) {
+              _fetchUnreadNotifs();
+            });
           },
         ),
         if (isDesktop) SizedBox(width: 16),

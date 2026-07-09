@@ -41,8 +41,9 @@ class _WishlistScreenState extends State<WishlistScreen> {
       ).timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
-        List jsonResponse = json.decode(response.body);
-        return jsonResponse.map((p) => Product.fromJson(p)).toList();
+        Map<String, dynamic> jsonResponse = json.decode(response.body);
+        List items = jsonResponse['items'] ?? [];
+        return items.map((p) => Product.fromJson(p)).toList();
       } else {
         throw Exception('Failed to load wishlist');
       }

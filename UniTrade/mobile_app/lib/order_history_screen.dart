@@ -119,13 +119,18 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                               child: (firstItem['image_url'] != null && firstItem['image_url'].toString().isNotEmpty)
                                   ? ClipRRect(
                                       borderRadius: BorderRadius.circular(8),
-                                      child: Image.network(
-                                        firstItem['image_url'].toString().startsWith('http')
-                                            ? firstItem['image_url']
-                                            : '${AuthService.baseUrl}${firstItem['image_url']}',
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (context, error, stackTrace) => const Icon(Icons.image_not_supported, color: Colors.grey),
-                                      ),
+                                      child: firstItem['image_url'].toString().startsWith('assets/')
+                                          ? Image.asset(
+                                              firstItem['image_url'],
+                                              fit: BoxFit.cover,
+                                            )
+                                          : Image.network(
+                                              firstItem['image_url'].toString().startsWith('http')
+                                                  ? firstItem['image_url']
+                                                  : '${AuthService.baseUrl}${firstItem['image_url']}',
+                                              fit: BoxFit.cover,
+                                              errorBuilder: (context, error, stackTrace) => const Icon(Icons.image_not_supported, color: Colors.grey),
+                                            ),
                                     )
                                   : const Icon(Icons.image_not_supported, color: Colors.grey),
                             ),

@@ -3,8 +3,9 @@ import 'auth_service.dart';
 import 'login_page.dart';
 import 'edit_profile_page.dart';
 import 'my_listings_page.dart';
-import 'purchases_page.dart';
-import 'wishlist_page.dart';
+import 'order_history_screen.dart';
+import 'wishlist_screen.dart';
+import 'theme.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -23,15 +24,15 @@ class _ProfilePageState extends State<ProfilePage> {
     final reputationPoints = user?['reputation_points'] ?? 120;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF121215),
+      backgroundColor: context.bgColor,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1E1E22),
+        backgroundColor: context.surfaceColor,
         elevation: 0,
-        title: const Text(
+        title: Text(
           'Profile',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: TextStyle(color: context.textColor, fontWeight: FontWeight.bold),
         ),
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: context.textColor),
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -41,16 +42,16 @@ class _ProfilePageState extends State<ProfilePage> {
             Center(
               child: Column(
                 children: [
-                  const CircleAvatar(
+                  CircleAvatar(
                     radius: 50,
-                    backgroundColor: Color(0xFF2A2A30),
-                    child: Icon(Icons.person, size: 60, color: Colors.grey),
+                    backgroundColor: context.surfaceHighlight,
+                    child: Icon(Icons.person, size: 60, color: context.textMuted),
                   ),
                   const SizedBox(height: 16),
                   Text(
                     name,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: context.textColor,
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                     ),
@@ -58,8 +59,8 @@ class _ProfilePageState extends State<ProfilePage> {
                   const SizedBox(height: 4),
                   Text(
                     email,
-                    style: const TextStyle(
-                      color: Colors.grey,
+                    style: TextStyle(
+                      color: context.textMuted,
                       fontSize: 14,
                     ),
                   ),
@@ -95,8 +96,8 @@ class _ProfilePageState extends State<ProfilePage> {
                       const SizedBox(width: 4),
                       Text(
                         "$reputationPoints pts",
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: context.textColor,
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                         ),
@@ -114,6 +115,7 @@ class _ProfilePageState extends State<ProfilePage> {
               child: Column(
                 children: [
                   _buildMenuTile(
+                    context: context,
                     icon: Icons.edit_outlined,
                     title: 'Edit Profile',
                     onTap: () {
@@ -126,6 +128,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     },
                   ),
                   _buildMenuTile(
+                    context: context,
                     icon: Icons.list_alt,
                     title: 'My Listings',
                     onTap: () {
@@ -136,27 +139,30 @@ class _ProfilePageState extends State<ProfilePage> {
                     },
                   ),
                   _buildMenuTile(
+                    context: context,
                     icon: Icons.shopping_bag_outlined,
                     title: 'Purchases',
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const PurchasesPage()),
+                        MaterialPageRoute(builder: (context) => const OrderHistoryScreen()),
                       );
                     },
                   ),
                   _buildMenuTile(
+                    context: context,
                     icon: Icons.favorite_border,
                     title: 'Wishlist',
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const WishlistPage()),
+                        MaterialPageRoute(builder: (context) => const WishlistScreen()),
                       );
                     },
                   ),
                   const SizedBox(height: 24),
                   _buildMenuTile(
+                    context: context,
                     icon: Icons.logout,
                     title: 'Logout',
                     isDestructive: true,
@@ -175,25 +181,26 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Widget _buildMenuTile({
+    required BuildContext context,
     required IconData icon,
     required String title,
     required VoidCallback onTap,
     bool isDestructive = false,
   }) {
-    final color = isDestructive ? Colors.redAccent : Colors.white;
+    final color = isDestructive ? Colors.redAccent : context.textColor;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E1E22),
+        color: context.surfaceColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(color: context.borderColor),
       ),
       child: ListTile(
         onTap: onTap,
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: isDestructive ? Colors.redAccent.withOpacity(0.1) : const Color(0xFF2A2A30),
+            color: isDestructive ? Colors.redAccent.withOpacity(0.1) : context.surfaceHighlight,
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(icon, color: color, size: 20),
@@ -208,7 +215,7 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
         trailing: Icon(
           Icons.chevron_right,
-          color: isDestructive ? Colors.redAccent.withOpacity(0.5) : Colors.grey,
+          color: isDestructive ? Colors.redAccent.withOpacity(0.5) : context.textMuted,
           size: 20,
         ),
       ),
@@ -220,14 +227,14 @@ class _ProfilePageState extends State<ProfilePage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          backgroundColor: const Color(0xFF1E1E22),
-          title: const Text(
+          backgroundColor: context.surfaceColor,
+          title: Text(
             'Logout',
-            style: TextStyle(color: Colors.white),
+            style: TextStyle(color: context.textColor),
           ),
-          content: const Text(
+          content: Text(
             'Are you sure you want to logout?',
-            style: TextStyle(color: Colors.grey),
+            style: TextStyle(color: context.textMuted),
           ),
           actions: [
             TextButton(
@@ -240,7 +247,7 @@ class _ProfilePageState extends State<ProfilePage> {
               onPressed: () {
                 AuthService.logout();
                 Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (context) => const LoginPage()),
+                  MaterialPageRoute(builder: (context) => LoginPage()),
                   (Route<dynamic> route) => false,
                 );
               },
