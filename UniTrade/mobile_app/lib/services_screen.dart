@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'theme.dart';
 import 'package:http/http.dart' as http;
+import 'config.dart';
 import 'sell_service_screen.dart';
 import 'sell_item_screen.dart';
 import 'auth_service.dart';
@@ -13,6 +14,7 @@ import 'service_detail_screen.dart';
 import 'wishlist_screen.dart';
 import 'notification_screen.dart';
 import 'cart_screen.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 class CurrencyInputFormatter extends TextInputFormatter {
   @override
@@ -131,7 +133,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
       final token = AuthService.token;
       if (token == null) return;
       final response = await http.get(
-        Uri.parse('http://192.168.18.68:8000/notifications/unread_count'),
+        Uri.parse('${AppConfig.baseUrl}/notifications/unread_count'),
         headers: {'Authorization': 'Bearer $token'},
       ).timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
@@ -867,7 +869,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
           ),
           itemCount: services.length,
           itemBuilder: (context, index) {
-            return _buildServiceCard(services[index]);
+            return _buildServiceCard(services[index]).animate(delay: (100 * index).ms).fade(duration: 400.ms).slideY(begin: 0.2);
           },
         );
       },
@@ -904,7 +906,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
                         child: Image.network(
                           service.imageUrl.startsWith('http')
                               ? service.imageUrl
-                              : 'http://192.168.18.68:8000${service.imageUrl}',
+                              : '${AppConfig.baseUrl}${service.imageUrl}',
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) =>
                               Icon(Icons.build_circle_outlined, color: context.colors.border, size: 50),
@@ -1009,7 +1011,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
               child: Image.network(
                 service.imageUrl.startsWith('http')
                     ? service.imageUrl
-                    : 'http://192.168.18.68:8000${service.imageUrl}',
+                    : '${AppConfig.baseUrl}${service.imageUrl}',
                 width: double.infinity,
                 height: 200,
                 fit: BoxFit.cover,

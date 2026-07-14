@@ -5,8 +5,9 @@ import 'payment_screen.dart';
 
 class CheckoutScreen extends StatefulWidget {
   final int totalPrice;
+  final Map<String, dynamic>? buyNowItem;
 
-  const CheckoutScreen({Key? key, required this.totalPrice}) : super(key: key);
+  const CheckoutScreen({Key? key, required this.totalPrice, this.buyNowItem}) : super(key: key);
 
   @override
   State<CheckoutScreen> createState() => _CheckoutScreenState();
@@ -36,7 +37,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     });
 
     try {
-      final response = await OrderService.checkout(_selectedPaymentMethod, _addressController.text.trim());
+      final response = await OrderService.checkout(
+        _selectedPaymentMethod, 
+        _addressController.text.trim(),
+        buyNowItem: widget.buyNowItem,
+      );
       final int orderId = response['order_id'];
       
       if (mounted) {

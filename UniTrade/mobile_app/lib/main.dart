@@ -1,4 +1,4 @@
-﻿import 'dart:convert'; // Huruf 'i' harus kecil
+import 'dart:convert'; // Huruf 'i' harus kecil
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'login_page.dart'; // Import file login
@@ -33,6 +33,13 @@ class MyApp extends StatelessWidget {
               secondary: Color(0xFFD35400),
               surface: Colors.white,
             ),
+            pageTransitionsTheme: const PageTransitionsTheme(
+              builders: {
+                TargetPlatform.android: ZoomPageTransitionsBuilder(),
+                TargetPlatform.iOS: ZoomPageTransitionsBuilder(),
+                TargetPlatform.windows: ZoomPageTransitionsBuilder(),
+              },
+            ),
           ),
           darkTheme: ThemeData(
             brightness: Brightness.dark,
@@ -42,6 +49,13 @@ class MyApp extends StatelessWidget {
               primary: Color(0xFFE67E22),
               secondary: Color(0xFFD35400),
               surface: Color(0xFF1E1E22),
+            ),
+            pageTransitionsTheme: const PageTransitionsTheme(
+              builders: {
+                TargetPlatform.android: ZoomPageTransitionsBuilder(),
+                TargetPlatform.iOS: ZoomPageTransitionsBuilder(),
+                TargetPlatform.windows: ZoomPageTransitionsBuilder(),
+              },
             ),
           ),
           home:

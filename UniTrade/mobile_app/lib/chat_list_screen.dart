@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'chat_service.dart';
 import 'chat_detail_screen.dart';
 import 'theme.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 class ChatListScreen extends StatefulWidget {
   const ChatListScreen({super.key});
@@ -76,7 +77,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                     });
                   });
                 },
-              );
+              ).animate(delay: (50 * index).ms).fade(duration: 300.ms).slideX(begin: 0.1);
             },
           );
         },

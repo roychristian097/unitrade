@@ -16,14 +16,14 @@ final ValueNotifier<ThemeMode> globals_themeNotifier = themeNotifier;
 extension ThemeColors on BuildContext {
   bool get isDark => Theme.of(this).brightness == Brightness.dark;
   
-  Color get bgColor => isDark ? const Color(0xFF0F0F11) : const Color(0xFFF8F9FA);
-  Color get surfaceColor => isDark ? const Color(0xFF1E1E22) : Colors.white;
-  Color get surfaceHighlight => isDark ? const Color(0xFF2A2A2E) : const Color(0xFFF0F0F0);
+  Color get bgColor => isDark ? const Color(0xFF0D0D0E) : const Color(0xFFFAF8F5);
+  Color get surfaceColor => isDark ? const Color(0xFF16161A) : Colors.white;
+  Color get surfaceHighlight => isDark ? const Color(0xFF22222A) : const Color(0xFFF5F0EB);
   
   Color get textColor => isDark ? Colors.white : const Color(0xFF1A1A1A);
-  Color get textMuted => isDark ? Colors.grey.shade500 : Colors.grey.shade600;
+  Color get textMuted => isDark ? const Color(0xFF8A8A93) : Colors.grey.shade600;
   
-  Color get borderColor => isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05);
+  Color get borderColor => isDark ? const Color(0xFF25252A) : Colors.black.withValues(alpha: 0.06);
 }
 
 // Friend's Theme definitions
@@ -36,6 +36,14 @@ class AppColors {
   final Color accent;
   final Color textPrimary;
   final Color glassBg;
+  // New vibrant colors matching Rockart
+  final Color primaryLight;
+  final Color primaryDark;
+  final Color promoGradientStart;
+  final Color promoGradientEnd;
+  final Color cardShadow;
+  final Color successGreen;
+  final Color warmGrey;
 
   const AppColors({
     required this.background,
@@ -46,34 +54,55 @@ class AppColors {
     required this.accent,
     required this.textPrimary,
     required this.glassBg,
+    required this.primaryLight,
+    required this.primaryDark,
+    required this.promoGradientStart,
+    required this.promoGradientEnd,
+    required this.cardShadow,
+    required this.successGreen,
+    required this.warmGrey,
   });
 }
 
 class AppTheme {
-  static const double radiusCard = 28.0;
-  static const double radiusButton = 20.0;
-  static const Color primaryBase = Color(0xFFFF8A00);
+  static const double radiusCard = 24.0;
+  static const double radiusButton = 30.0;
+  static const Color primaryBase = Color(0xFFFF5500); // Neon Orange
 
   static const AppColors darkColors = AppColors(
-    background: Color(0xFF161412),
+    background: Color(0xFF0D0D0E), // Rockart Pure Dark Background
     primary: primaryBase,
-    cardBg: Color(0xFF211D1A),
-    textMuted: Color(0xFF998F86),
-    border: Color(0xFF38322D),
-    accent: Color(0xFFF59E0B),
+    cardBg: Color(0xFF16161A), // Rockart card surface
+    textMuted: Color(0xFF8A8A93),
+    border: Color(0xFF25252A),
+    accent: Color(0xFFFF5500),
     textPrimary: Colors.white,
-    glassBg: Color(0xFF1E1914),
+    glassBg: Color(0xFF121215),
+    primaryLight: Color(0xFFFF884D),
+    primaryDark: Color(0xFFCC4400),
+    promoGradientStart: Color(0xFFFF5500),
+    promoGradientEnd: Color(0xFFB33300),
+    cardShadow: Color(0x7F000000),
+    successGreen: Color(0xFF00E676),
+    warmGrey: Color(0xFF22222A),
   );
 
   static const AppColors lightColors = AppColors(
-    background: Color(0xFFF8F5F1),
+    background: Color(0xFFFAF8F5),
     primary: primaryBase,
     cardBg: Colors.white,
     textMuted: Color(0xFF7A736E),
     border: Color(0xFFE5E0DA),
-    accent: Color(0xFFF59E0B),
+    accent: Color(0xFFFF5500),
     textPrimary: Color(0xFF161412),
     glassBg: Color(0xFFFFFFFF),
+    primaryLight: Color(0xFFFFECE3),
+    primaryDark: Color(0xFFCC4400),
+    promoGradientStart: Color(0xFFFF7733),
+    promoGradientEnd: Color(0xFFFF5500),
+    cardShadow: Color(0x14000000),
+    successGreen: Color(0xFF00E676),
+    warmGrey: Color(0xFFF0EBE5),
   );
 
   static AppColors colors(BuildContext context) {

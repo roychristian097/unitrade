@@ -1,6 +1,7 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'theme.dart';
 import 'admin_service.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -174,7 +175,7 @@ class _AdminListTabState extends State<AdminListTab> {
                 ),
               ],
             ),
-          ),
+          ).animate(delay: (50 * index).ms).fade(duration: 300.ms).slideX(begin: 0.1),
         );
       },
     );

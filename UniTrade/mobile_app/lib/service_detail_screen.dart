@@ -3,9 +3,11 @@ import 'theme.dart';
 import 'package:flutter/material.dart';
 import 'services_screen.dart'; // import to reuse ServiceItem and formatCurrency
 import 'auth_service.dart';
+import 'config.dart';
 import 'chat_detail_screen.dart';
 import 'chat_list_screen.dart';
 import 'main_hub.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 class ServiceDetailScreen extends StatefulWidget {
   final ServiceItem service;
@@ -45,7 +47,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                     ),
                   ],
                 ),
-              ),
+              ).animate().fade(duration: 400.ms).slideX(begin: -0.2),
               const SizedBox(height: 24),
               
               // Hero Section
@@ -53,24 +55,25 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                   ? Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(flex: 5, child: _buildImageSection()),
+                        Expanded(flex: 5, child: _buildImageSection().animate().fade(duration: 500.ms).scale(begin: const Offset(0.95, 0.95))),
                         const SizedBox(width: 48),
-                        Expanded(flex: 4, child: _buildRightDetailsSection()),
+                        Expanded(flex: 4, child: _buildRightDetailsSection().animate().fade(duration: 500.ms, delay: 200.ms).slideX(begin: 0.2)),
                       ],
                     )
                   : Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        SizedBox(height: 300, child: _buildImageSection()),
+                        SizedBox(height: 300, child: _buildImageSection().animate().fade(duration: 500.ms).scale(begin: const Offset(0.95, 0.95))),
                         const SizedBox(height: 24),
-                        _buildRightDetailsSection(),
+                        _buildRightDetailsSection().animate().fade(duration: 500.ms, delay: 200.ms).slideY(begin: 0.2),
                       ],
                     ),
 
               const SizedBox(height: 48),
 
               // Description & Reviews Section
-              isDesktop ? _buildBottomDetailsDesktop() : _buildBottomDetailsMobile(),
+              (isDesktop ? _buildBottomDetailsDesktop() : _buildBottomDetailsMobile())
+                  .animate().fade(duration: 500.ms, delay: 400.ms).slideY(begin: 0.2),
               
               const SizedBox(height: 48),
             ],
@@ -94,7 +97,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
             ClipRRect(
               borderRadius: BorderRadius.circular(16),
               child: Image.network(
-                'http://192.168.18.68:8000${widget.service.imageUrl}',
+                '${AppConfig.baseUrl}${widget.service.imageUrl}',
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) =>
                     Center(child: Icon(Icons.image_outlined, color: context.colors.border, size: 80)),
@@ -518,7 +521,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
     );
     if (confirm != true) return;
     try {
-      final uri = Uri.http('192.168.18.68:8000', '/services/${widget.service.id}');
+      final uri = Uri.http(AppConfig.rawAuthority, '/services/${widget.service.id}');
       final response = await http.delete(uri);
       if (response.statusCode == 200) {
         if (mounted) {

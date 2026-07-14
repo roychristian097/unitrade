@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'theme.dart';
 import 'auth_service.dart';
+import 'config.dart';
 
 import 'services_screen.dart'; // Import ServiceItem
 
@@ -100,8 +101,8 @@ class _SellServiceScreenState extends State<SellServiceScreen> {
 
       final isEdit = widget.existingService != null;
       final uri = isEdit 
-          ? Uri.http('192.168.18.68:8000', '/services/${widget.existingService!.id}')
-          : Uri.http('192.168.18.68:8000', '/services');
+          ? Uri.http(AppConfig.rawAuthority, '/services/${widget.existingService!.id}')
+          : Uri.http(AppConfig.rawAuthority, '/services');
       var request = http.MultipartRequest(isEdit ? 'PUT' : 'POST', uri);
       
       if (AuthService.token != null) {

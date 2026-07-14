@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'auth_service.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 class EditProfilePage extends StatefulWidget {
   const EditProfilePage({super.key});
@@ -79,19 +80,19 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   child: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
                 ),
               ],
-            ),
+            ).animate().fade(duration: 400.ms).scale(duration: 400.ms),
             const SizedBox(height: 32),
             _buildTextField(
               controller: _nameController,
               label: 'Full Name',
               icon: Icons.person_outline,
-            ),
+            ).animate().fade(delay: 100.ms).slideY(begin: 0.2),
             const SizedBox(height: 16),
             _buildTextField(
               controller: _campusController,
               label: 'Campus / University',
               icon: Icons.school_outlined,
-            ),
+            ).animate().fade(delay: 200.ms).slideY(begin: 0.2),
             const SizedBox(height: 48),
             SizedBox(
               width: double.infinity,
@@ -113,7 +114,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   ),
                 ),
               ),
-            ),
+            ).animate().fade(delay: 300.ms).slideY(begin: 0.2),
           ],
         ),
       ),

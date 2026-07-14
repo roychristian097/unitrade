@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:convert';
 import 'marketplace_screen.dart'; // For CurrencyInputFormatter if needed
 import 'auth_service.dart';
+import 'config.dart';
 
 class SellItemScreen extends StatefulWidget {
   final Product? existingProduct;
@@ -108,8 +109,8 @@ class _SellItemScreenState extends State<SellItemScreen> {
 
       final isEdit = widget.existingProduct != null;
       final uri = isEdit 
-          ? Uri.http('192.168.18.68:8000', '/products/${widget.existingProduct!.id}')
-          : Uri.http('192.168.18.68:8000', '/products');
+          ? Uri.http(AppConfig.rawAuthority, '/products/${widget.existingProduct!.id}')
+          : Uri.http(AppConfig.rawAuthority, '/products');
       var request = http.MultipartRequest(isEdit ? 'PUT' : 'POST', uri);
 
       if (AuthService.token != null) {

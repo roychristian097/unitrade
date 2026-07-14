@@ -5,6 +5,7 @@ import 'theme.dart';
 import 'sell_item_screen.dart';
 import 'sell_service_screen.dart';
 import 'auth_service.dart';
+import 'config.dart';
 import 'marketplace_screen.dart'; // for Product
 import 'services_screen.dart' hide formatCurrency; // for ServiceItem
 import 'product_detail_screen.dart';
@@ -27,7 +28,7 @@ class _SellHubScreenState extends State<SellHubScreen> {
   }
 
   Future<Map<String, List<dynamic>>> _fetchUserListings() async {
-    final uri = Uri.http('192.168.18.68:8000', '/user/listings');
+    final uri = Uri.http(AppConfig.rawAuthority, '/user/listings');
     final headers = {'Content-Type': 'application/json'};
     if (AuthService.token != null) {
       headers['Authorization'] = 'Bearer ${AuthService.token}';
@@ -313,7 +314,7 @@ class _SellHubScreenState extends State<SellHubScreen> {
                   ? ClipRRect(
                       borderRadius: BorderRadius.circular(8),
                       child: Image.network(
-                        imageUrl.startsWith('http') ? imageUrl : 'http://192.168.18.68:8000$imageUrl',
+                        imageUrl.startsWith('http') ? imageUrl : '${AppConfig.baseUrl}$imageUrl',
                         fit: BoxFit.cover,
                       ),
                     )

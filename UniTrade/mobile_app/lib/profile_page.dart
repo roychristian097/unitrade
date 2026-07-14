@@ -160,6 +160,14 @@ class _ProfilePageState extends State<ProfilePage> {
                       );
                     },
                   ),
+                  _buildMenuTile(
+                    context: context,
+                    icon: context.isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+                    title: context.isDark ? 'Light Mode' : 'Dark Mode',
+                    onTap: () {
+                      ThemeManager.toggleTheme();
+                    },
+                  ),
                   const SizedBox(height: 24),
                   _buildMenuTile(
                     context: context,

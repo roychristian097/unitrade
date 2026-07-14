@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'theme.dart';
+import 'config.dart';
 import 'marketplace_screen.dart'; // To reuse Product, formatCurrency
 import 'auth_service.dart';
 import 'product_detail_screen.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 class WishlistScreen extends StatefulWidget {
   const WishlistScreen({super.key});
@@ -133,7 +135,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
                   ),
                   itemCount: products.length,
                   itemBuilder: (context, index) {
-                    return _buildProductCard(products[index]);
+                    return _buildProductCard(products[index]).animate(delay: (50 * index).ms).fade(duration: 300.ms).slideY(begin: 0.1);
                   },
                 );
               },
@@ -182,7 +184,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
                         child: Image.network(
                           product.imageUrl.startsWith('http')
                               ? product.imageUrl
-                              : 'http://192.168.18.68:8000${product.imageUrl}',
+                              : '${AppConfig.baseUrl}${product.imageUrl}',
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) =>
                               Icon(Icons.image_outlined, color: context.colors.border, size: 50),

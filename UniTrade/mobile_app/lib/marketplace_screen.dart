@@ -8,6 +8,7 @@ import 'dart:async';
 import 'product_detail_screen.dart';
 import 'sell_item_screen.dart';
 import 'auth_service.dart';
+import 'config.dart';
 import 'chat_list_screen.dart';
 import 'wishlist_screen.dart';
 import 'notification_screen.dart';
@@ -104,7 +105,7 @@ class MarketplaceScreen extends StatefulWidget {
   State<MarketplaceScreen> createState() => _MarketplaceScreenState();
 }
 
-class _MarketplaceScreenState extends State<MarketplaceScreen> {
+class _MarketplaceScreenState extends State<MarketplaceScreen> with TickerProviderStateMixin {
   late Future<List<Product>> _productsFuture;
 
   // Filter States
@@ -140,6 +141,19 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
 
   late bool _showWelcomeMessage;
 
+  // Promo banner page controller
+  final PageController _promoPageController = PageController();
+  int _currentPromoPage = 0;
+  Timer? _promoTimer;
+
+  // Category data
+  final List<Map<String, dynamic>> _categoryIcons = [
+    {'name': 'Elektronik', 'icon': Icons.phone_android, 'color': Color(0xFFFF8A00)},
+    {'name': 'Pakaian', 'icon': Icons.checkroom, 'color': Color(0xFFF59E0B)},
+    {'name': 'Otomotif', 'icon': Icons.directions_car, 'color': Color(0xFFD35400)},
+    {'name': 'Jasa', 'icon': Icons.handyman, 'color': Color(0xFFFF6B35)},
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -149,6 +163,17 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
     _fetchUnreadNotifs();
     _pollingTimer = Timer.periodic(const Duration(seconds: 10), (_) => _fetchUnreadNotifs());
     MarketplaceScreen.refreshNotifier.addListener(_onRefreshNotifierChanged);
+    // Auto-scroll promo banner
+    _promoTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+      if (_promoPageController.hasClients) {
+        _currentPromoPage = (_currentPromoPage + 1) % 3;
+        _promoPageController.animateToPage(
+          _currentPromoPage,
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
   }
 
   Future<void> _fetchUnreadNotifs() async {
@@ -156,7 +181,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
       final token = AuthService.token;
       if (token == null) return;
       final response = await http.get(
-        Uri.parse('http://192.168.18.68:8000/notifications/unread_count'),
+        Uri.parse('${AppConfig.baseUrl}/notifications/unread_count'),
         headers: {'Authorization': 'Bearer $token'},
       ).timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
@@ -190,6 +215,8 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
     _minPriceController.dispose();
     _maxPriceController.dispose();
     _pollingTimer?.cancel();
+    _promoTimer?.cancel();
+    _promoPageController.dispose();
     super.dispose();
   }
 
@@ -215,7 +242,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
       if (!_includeAllJabodetabek && _selectedJabodetabekCampus != 'Pilih Kampus') {
         queryParams['campus'] = _selectedJabodetabekCampus;
       }
-      final uri = Uri.http('192.168.18.68:8000', '/products', queryParams);
+      final uri = Uri.http(AppConfig.rawAuthority, '/products', queryParams);
 
       final response = await http.get(uri).timeout(Duration(seconds: 5));
 
@@ -233,7 +260,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
 
   Future<void> fetchCampuses() async {
     try {
-      final uri = Uri.http('192.168.18.68:8000', '/campuses');
+      final uri = Uri.http(AppConfig.rawAuthority, '/campuses');
       final response = await http.get(uri).timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
         List jsonResponse = json.decode(response.body);
@@ -279,81 +306,452 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
 
     return Scaffold(
       backgroundColor: context.bgColor,
-      extendBody: true, // Make body extend behind bottom navbar
-      appBar: _buildAppBar(isDesktop),
-
+      extendBody: true,
+      appBar: isDesktop ? _buildAppBar(isDesktop) : null,
       body: RefreshIndicator(
-        color: const Color(0xFFE67E22),
+        color: const Color(0xFFFF5500),
         backgroundColor: context.surfaceColor,
         onRefresh: _refreshData,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          child: Padding(
-          padding: EdgeInsets.all(24.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (!isDesktop)
+                SizedBox(height: MediaQuery.of(context).padding.top + 12),
               if (_showWelcomeMessage)
-                Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  margin: EdgeInsets.only(bottom: 24),
-                  decoration: BoxDecoration(
-                    color: context.surfaceColor,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: context.colors.border),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        "Selamat datang, $_welcomeName 😊",
-                        style: TextStyle(color: context.textColor, fontWeight: FontWeight.bold),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [context.colors.promoGradientStart.withValues(alpha: 0.15), context.colors.promoGradientEnd.withValues(alpha: 0.08)],
                       ),
-                      InkWell(
-                        onTap: () {
-                          setState(() {
-                            _showWelcomeMessage = false;
-                          });
-                        },
-                        child: Icon(Icons.close, color: context.textMuted, size: 18),
-                      )
-                    ],
-                  ),
-                ),
-              _buildHeaderSection(),
-              SizedBox(height: 24),
-              _buildPromoBanner(),
-              SizedBox(height: 32),
-              isDesktop
-                  ? Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: context.colors.primary.withValues(alpha: 0.2)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        SizedBox(
-                          width: 280,
-                          child: _buildSidebarFilters(),
-                        ),
-                        SizedBox(width: 32),
                         Expanded(
-                          child: _buildProductGrid(isDesktop),
+                          child: Text(
+                            "Selamat datang, $_welcomeName 😊",
+                            style: TextStyle(color: context.textColor, fontWeight: FontWeight.bold, fontSize: 14),
+                          ),
                         ),
-                      ],
-                    )
-                  : Column(
-                      children: [
-                        _buildMobileSearchBar(),
-                        SizedBox(height: 16),
-                        _buildQuickCategoryChips(),
-                        SizedBox(height: 24),
-                        _buildProductGrid(isDesktop),
-                        SizedBox(height: 100), // Padding for transparent navbar
+                        InkWell(
+                          onTap: () => setState(() => _showWelcomeMessage = false),
+                          child: Icon(Icons.close, color: context.textMuted, size: 18),
+                        )
                       ],
                     ),
+                  ),
+                ),
+              
+              // Search Bar Section
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                child: _buildSearchSection(),
+              ),
+
+              // Promo Banner
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                child: _buildPromoBanner(),
+              ),
+
+              // Categories
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 28, 20, 0),
+                child: _buildCategoriesSection(),
+              ),
+
+              // Product section header (Deal of the Day)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 28, 20, 0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          "Deal Of The Day",
+                          style: TextStyle(color: context.textColor, fontSize: 20, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(width: 8),
+                        const Icon(Icons.access_time_rounded, color: Color(0xFFFF5500), size: 16),
+                        const SizedBox(width: 4),
+                        const Text(
+                          "13:19:10",
+                          style: TextStyle(color: Color(0xFFFF5500), fontSize: 13, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                    InkWell(
+                      onTap: () {},
+                      child: Text(
+                        "See All",
+                        style: TextStyle(color: context.colors.primary, fontSize: 14, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Quick category filter chips
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                child: _buildQuickCategoryChips(),
+              ),
+
+              // Product Grid
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                child: isDesktop
+                    ? Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(width: 280, child: _buildSidebarFilters()),
+                          SizedBox(width: 32),
+                          Expanded(child: _buildProductGrid(isDesktop)),
+                        ],
+                      )
+                    : _buildProductGrid(isDesktop),
+              ),
+
+              SizedBox(height: 120),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildSearchSection() {
+    return Row(
+      children: [
+        // Search bar
+        Expanded(
+          child: Container(
+            decoration: BoxDecoration(
+              color: context.surfaceColor,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: context.borderColor),
+            ),
+            child: TextField(
+              controller: _searchController,
+              onSubmitted: (_) => _applyFilters(),
+              style: TextStyle(color: context.textColor, fontSize: 14),
+              decoration: InputDecoration(
+                hintText: "What do you want?",
+                hintStyle: TextStyle(color: context.textMuted, fontSize: 14),
+                filled: true,
+                fillColor: Colors.transparent,
+                prefixIcon: Icon(Icons.search_rounded, color: context.textMuted, size: 20),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                border: InputBorder.none,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        // Inbox/Chat Icon
+        _buildHeaderIconButton(Icons.chat_bubble_outline_rounded, () {
+          Navigator.push(context, MaterialPageRoute(builder: (context) => ChatListScreen()));
+        }),
+        const SizedBox(width: 4),
+        // Notification Icon with Badge
+        _buildHeaderIconButton(
+          Icons.notifications_none_rounded, 
+          () {
+            Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationScreen())).then((_) {
+              _fetchUnreadNotifs();
+            });
+          },
+          badgeCount: _unreadNotifCount,
+        ),
+        const SizedBox(width: 4),
+        // Cart Icon
+        _buildHeaderIconButton(Icons.shopping_cart_outlined, () {
+          Navigator.push(context, MaterialPageRoute(builder: (context) => const CartScreen()));
+        }),
+        const SizedBox(width: 4),
+        // Filter Icon
+        _buildHeaderIconButton(Icons.tune_rounded, _showMobileFilterSheet),
+      ],
+    );
+  }
+
+  Widget _buildHeaderIconButton(IconData icon, VoidCallback onTap, {int badgeCount = 0}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: context.surfaceColor,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: context.borderColor),
+        ),
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Icon(icon, color: context.textColor, size: 20),
+            if (badgeCount > 0)
+              Positioned(
+                right: -4,
+                top: -4,
+                child: Container(
+                  padding: const EdgeInsets.all(3),
+                  decoration: const BoxDecoration(
+                    color: Colors.redAccent,
+                    shape: BoxShape.circle,
+                  ),
+                  constraints: const BoxConstraints(
+                    minWidth: 12,
+                    minHeight: 12,
+                  ),
+                  child: Text(
+                    badgeCount > 9 ? '9+' : '$badgeCount',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 8,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
+    );
+  }
+
+  Widget _buildPromoBanner() {
+    final promoItems = [
+      {
+        'title': 'Buy The New\nAir Jordan!',
+        'subtitle': 'Explore the iconic collection now',
+        'gradient': [const Color(0xFF1E1E24), const Color(0xFFFF5500)],
+        'buttonText': 'Shop Now',
+        'icon': Icons.sports_basketball_rounded,
+      },
+      {
+        'title': 'Daily Tech\nEssential',
+        'subtitle': 'Up to 30% discount on headphones',
+        'gradient': [const Color(0xFF111115), const Color(0xFFD35400)],
+        'buttonText': 'Discover',
+        'icon': Icons.headset_mic_rounded,
+      },
+      {
+        'title': 'Trade & Earn 💰',
+        'subtitle': 'Sell items & earn reward points',
+        'gradient': [const Color(0xFF1C1917), const Color(0xFFF59E0B)],
+        'buttonText': 'Learn More',
+        'icon': Icons.local_offer_rounded,
+      },
+    ];
+
+    return Column(
+      children: [
+        SizedBox(
+          height: 180,
+          child: PageView.builder(
+            controller: _promoPageController,
+            itemCount: promoItems.length,
+            onPageChanged: (i) => setState(() => _currentPromoPage = i),
+            itemBuilder: (context, index) {
+              final item = promoItems[index];
+              return Container(
+                margin: const EdgeInsets.symmetric(horizontal: 2),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: item['gradient'] as List<Color>,
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Stack(
+                  children: [
+                    // Decorative circles
+                    Positioned(
+                      right: -20,
+                      top: -20,
+                      child: Container(
+                        width: 120,
+                        height: 120,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white.withValues(alpha: 0.05),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      right: 30,
+                      bottom: -30,
+                      child: Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white.withValues(alpha: 0.04),
+                        ),
+                      ),
+                    ),
+                    // Product Icon on the right
+                    Positioned(
+                      right: 16,
+                      bottom: 16,
+                      top: 16,
+                      child: Icon(
+                        item['icon'] as IconData,
+                        color: Colors.white.withValues(alpha: 0.12),
+                        size: 100,
+                      ),
+                    ),
+                    // Content
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            item['title'] as String,
+                            style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold, height: 1.1, letterSpacing: -0.5),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            item['subtitle'] as String,
+                            style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 12),
+                          ),
+                          const SizedBox(height: 14),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(30),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.15),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Text(
+                              item['buttonText'] as String,
+                              style: const TextStyle(
+                                color: Colors.black,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 12),
+        // Dot indicators
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(promoItems.length, (index) {
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              margin: const EdgeInsets.symmetric(horizontal: 3),
+              width: _currentPromoPage == index ? 24 : 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: _currentPromoPage == index
+                    ? const Color(0xFFFF5500)
+                    : context.textMuted.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(4),
+              ),
+            );
+          }),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCategoriesSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "Categories",
+          style: TextStyle(color: context.textColor, fontSize: 20, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 16),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: _categoryIcons.map((cat) {
+            final bool isSelected = _selectedCategory == cat['name'];
+            return InkWell(
+              onTap: () {
+                setState(() {
+                  _selectedCategory = isSelected ? 'Semua Kategori' : cat['name'];
+                  _applyFilters();
+                });
+              },
+              borderRadius: BorderRadius.circular(16),
+              child: Column(
+                children: [
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    width: 64,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? context.colors.primary
+                          : context.colors.cardBg,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: isSelected
+                            ? Colors.transparent
+                            : context.colors.border,
+                      ),
+                      boxShadow: isSelected
+                          ? [
+                              BoxShadow(
+                                color: context.colors.primary.withValues(alpha: 0.35),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ]
+                          : [],
+                    ),
+                    child: Icon(
+                      cat['icon'] as IconData,
+                      color: isSelected ? Colors.white : context.textMuted,
+                      size: 26,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    cat['name'] as String,
+                    style: TextStyle(
+                      color: isSelected ? context.colors.primary : context.textMuted,
+                      fontSize: 12,
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+        ),
+      ],
     );
   }
 
@@ -402,7 +800,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
           ),
         ] else ...[
           IconButton(
-            icon: Icon(context.isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined, color: Colors.grey, size: 20),
+            icon: Icon(context.isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined, color: context.textMuted, size: 20),
             onPressed: () {
               themeNotifier.value = context.isDark ? ThemeMode.light : ThemeMode.dark;
             },
@@ -537,99 +935,6 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
     );
   }
 
-  Widget _buildHeaderSection() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "Campus Marketplace",
-                style: TextStyle(color: context.textColor, fontSize: 28, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 8),
-              Text(
-                "Buy and sell textbooks, electronics, and dorm gear within your university zone.",
-                style: TextStyle(color: Colors.grey[400], fontSize: 14),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPromoBanner() {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFE67E22), Color(0xFFD35400)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text("Back to Campus Sale! 🎓", style: TextStyle(color: context.textColor, fontSize: 18, fontWeight: FontWeight.bold)),
-          SizedBox(height: 8),
-          Text("Get up to 50% off on textbooks and electronics this week.", style: TextStyle(color: context.textColor, fontSize: 13)),
-          SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: () {},
-            style: ElevatedButton.styleFrom(
-              backgroundColor: context.textColor,
-              foregroundColor: const Color(0xFFE67E22),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            ),
-            child: Text("Shop Now", style: TextStyle(fontWeight: FontWeight.bold)),
-          )
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMobileSearchBar() {
-    return Row(
-      children: [
-        Expanded(
-          child: TextField(
-            controller: _searchController,
-            onSubmitted: (_) => _applyFilters(),
-            style: TextStyle(color: context.textColor, fontSize: 13),
-            decoration: InputDecoration(
-              hintText: "Search for laptops, books, etc...",
-              hintStyle: TextStyle(color: Colors.grey[600], fontSize: 13),
-              filled: true,
-              fillColor: context.surfaceColor,
-              prefixIcon: Icon(Icons.search, color: Colors.grey, size: 20),
-              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-            ),
-          ),
-        ),
-        SizedBox(width: 12),
-        InkWell(
-          onTap: _showMobileFilterSheet,
-          child: Container(
-            padding: EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: context.colors.primary,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(Icons.tune, color: context.textColor, size: 20),
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildQuickCategoryChips() {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -640,14 +945,23 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
           return Padding(
             padding: EdgeInsets.only(right: 8.0),
             child: ChoiceChip(
-              label: Text(category, style: TextStyle(color: isSelected ? context.textColor : Colors.grey[400], fontSize: 13)),
+              label: Text(
+                category,
+                style: TextStyle(
+                  color: isSelected ? Colors.white : context.textMuted,
+                  fontSize: 13,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                ),
+              ),
               selected: isSelected,
               selectedColor: const Color(0xFFE67E22),
               backgroundColor: context.surfaceColor,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-                side: BorderSide(color: isSelected ? const Color(0xFFE67E22) : Colors.transparent),
+                borderRadius: BorderRadius.circular(24),
+                side: BorderSide(color: isSelected ? const Color(0xFFE67E22) : context.borderColor),
               ),
+              elevation: isSelected ? 2 : 0,
+              pressElevation: 1,
               onSelected: (bool selected) {
                 setState(() {
                   _selectedCategory = category;
@@ -667,7 +981,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
       backgroundColor: context.surfaceHighlight,
       isScrollControlled: true,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (BuildContext context) {
         return StatefulBuilder(
@@ -803,7 +1117,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                               padding: EdgeInsets.symmetric(vertical: 16),
                             ),
-                            child: Text("Apply Filters", style: TextStyle(color: context.textColor, fontWeight: FontWeight.bold)),
+                            child: Text("Apply Filters", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                           ),
                         ),
                       ],
@@ -1044,30 +1358,189 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
           return Center(
             child: Padding(
               padding: EdgeInsets.all(32.0),
-              child: Text(
-                "Tidak ada produk yang cocok dengan filter pencarian Anda.",
-                style: TextStyle(color: Colors.grey, fontSize: 14),
-                textAlign: TextAlign.center,
+              child: Column(
+                children: [
+                  Icon(Icons.search_off_rounded, size: 60, color: context.textMuted),
+                  const SizedBox(height: 12),
+                  Text(
+                    "Tidak ada produk yang cocok dengan filter pencarian Anda.",
+                    style: TextStyle(color: Colors.grey, fontSize: 14),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
               ),
             ),
           );
         }
 
-        return GridView.builder(
+        if (isDesktop) {
+          return GridView.builder(
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              crossAxisSpacing: 20,
+              mainAxisSpacing: 20,
+              childAspectRatio: 0.85,
+            ),
+            itemCount: products.length,
+            itemBuilder: (context, index) {
+              return _buildProductCard(products[index]);
+            },
+          );
+        }
+
+        // Mobile: modern card list
+        return ListView.separated(
           shrinkWrap: true,
           physics: NeverScrollableScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: isDesktop ? 3 : 1, // 3 kolom di desktop, 1 di HP
-            crossAxisSpacing: 20,
-            mainAxisSpacing: 20,
-            childAspectRatio: isDesktop ? 0.85 : 1.5,
-          ),
           itemCount: products.length,
+          separatorBuilder: (_, __) => const SizedBox(height: 14),
           itemBuilder: (context, index) {
-            return _buildProductCard(products[index]);
+            return _buildProductCardMobile(products[index]);
           },
         );
       },
+    );
+  }
+
+  // Mobile product card — horizontal layout like the mockup
+  Widget _buildProductCardMobile(Product product) {
+    return InkWell(
+      onTap: () async {
+        if (product.itemType == 'Jasa') {
+          ServiceItem service = ServiceItem(
+            id: product.id,
+            sellerId: product.sellerId,
+            sellerName: product.sellerName,
+            sellerCampus: product.sellerCampus,
+            title: product.name,
+            description: product.description,
+            category: product.category,
+            price: product.price,
+            maxPrice: int.tryParse(product.advancedDetails['max_price']?.toString() ?? ''),
+            campus: product.campus,
+            meetupLocation: product.advancedDetails['meetup_location']?.toString(),
+            imageUrl: product.imageUrl,
+          );
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => ServiceDetailScreen(service: service)),
+          );
+          if (result == true) setState(() => _productsFuture = fetchProducts());
+        } else {
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => ProductDetailScreen(product: product)),
+          );
+          if (result == true) setState(() => _productsFuture = fetchProducts());
+        }
+      },
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        decoration: BoxDecoration(
+          color: context.surfaceColor,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: context.colors.cardShadow,
+              blurRadius: 12,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            // Product image
+            ClipRRect(
+              borderRadius: const BorderRadius.horizontal(left: Radius.circular(20)),
+              child: SizedBox(
+                width: 120,
+                height: 130,
+                child: product.imageUrl.isNotEmpty
+                    ? Image.network(
+                        product.imageUrl.startsWith('http')
+                            ? product.imageUrl
+                            : '${AppConfig.baseUrl}${product.imageUrl}',
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) =>
+                            Container(
+                              color: context.surfaceHighlight,
+                              child: Icon(Icons.image_outlined, color: context.textMuted, size: 40),
+                            ),
+                      )
+                    : Container(
+                        color: context.surfaceHighlight,
+                        child: Icon(Icons.image_outlined, color: context.textMuted, size: 40),
+                      ),
+              ),
+            ),
+            // Product info
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      product.name,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: context.textColor, fontSize: 15, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(Icons.location_on, color: context.colors.primary, size: 12),
+                        const SizedBox(width: 3),
+                        Expanded(
+                          child: Text(
+                            product.campus,
+                            style: TextStyle(color: context.textMuted, fontSize: 11),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            (() {
+                              String pText = "Rp ${formatCurrency(product.price)}";
+                              if (product.itemType == 'Jasa' && product.advancedDetails['max_price'] != null) {
+                                pText += " - Rp ${formatCurrency(int.tryParse(product.advancedDetails['max_price'].toString()) ?? 0)}";
+                              }
+                              return pText;
+                            })(),
+                            style: TextStyle(color: context.colors.primary, fontSize: 16, fontWeight: FontWeight.bold),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: context.colors.primary.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.arrow_forward_rounded, color: context.colors.primary, size: 14),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -1144,7 +1617,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                         child: Image.network(
                           product.imageUrl.startsWith('http')
                               ? product.imageUrl
-                              : 'http://192.168.18.68:8000${product.imageUrl}',
+                              : '${AppConfig.baseUrl}${product.imageUrl}',
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) =>
                               Icon(Icons.image_outlined, color: context.colors.border, size: 50),
@@ -1231,5 +1704,34 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildHeaderSection() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Campus Marketplace",
+                style: TextStyle(color: context.textColor, fontSize: 28, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 8),
+              Text(
+                "Buy and sell textbooks, electronics, and dorm gear within your university zone.",
+                style: TextStyle(color: Colors.grey[400], fontSize: 14),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMobileSearchBar() {
+    return _buildSearchSection();
   }
 }

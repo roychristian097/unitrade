@@ -307,9 +307,14 @@ class CartItemCreate(BaseModel):
 class CartItemUpdate(BaseModel):
     quantity: int
 
+class BuyNowItem(BaseModel):
+    product_id: int
+    quantity: int
+
 class CheckoutRequest(BaseModel):
     payment_method: str
     delivery_address: str
+    buy_now_item: Optional[BuyNowItem] = None
 
 @app.post("/register")
 async def register(request: RegisterRequest):
@@ -1169,19 +1174,37 @@ async def checkout(request: Request, checkout_data: CheckoutRequest):
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
     
-    # Ambil semua barang dari keranjang
-    cursor.execute('''
-        SELECT c.product_id, c.quantity, p.price, p.seller_id, p.name 
-        FROM carts c
-        JOIN products p ON c.product_id = p.id
-        WHERE c.user_id = ?
-    ''', (user_id,))
+    cart_items = []
     
-    cart_items = cursor.fetchall()
-    
-    if not cart_items:
-        conn.close()
-        raise HTTPException(status_code=400, detail="Cart is empty")
+    if checkout_data.buy_now_item:
+        # Checkout single item directly
+        cursor.execute("SELECT id as product_id, price, seller_id, name, stock FROM products WHERE id = ?", (checkout_data.buy_now_item.product_id,))
+        product_row = cursor.fetchone()
+        if not product_row:
+            conn.close()
+            raise HTTPException(status_code=404, detail="Product not found")
+        
+        cart_items.append({
+            "product_id": product_row["product_id"],
+            "quantity": checkout_data.buy_now_item.quantity,
+            "price": product_row["price"],
+            "seller_id": product_row["seller_id"],
+            "name": product_row["name"]
+        })
+    else:
+        # Ambil semua barang dari keranjang
+        cursor.execute('''
+            SELECT c.product_id, c.quantity, p.price, p.seller_id, p.name 
+            FROM carts c
+            JOIN products p ON c.product_id = p.id
+            WHERE c.user_id = ?
+        ''', (user_id,))
+        
+        cart_items = cursor.fetchall()
+        
+        if not cart_items:
+            conn.close()
+            raise HTTPException(status_code=400, detail="Cart is empty")
 
     # Cek Stok Barang
     for item in cart_items:
@@ -1215,8 +1238,9 @@ async def checkout(request: Request, checkout_data: CheckoutRequest):
             (item["seller_id"], "Pesanan Baru", f"Barang '{item['name']}' telah dipesan.")
         )
         
-    # Kosongkan keranjang
-    cursor.execute("DELETE FROM carts WHERE user_id = ?", (user_id,))
+    # Kosongkan keranjang HANYA JIKA BUKAN BUY NOW
+    if not checkout_data.buy_now_item:
+        cursor.execute("DELETE FROM carts WHERE user_id = ?", (user_id,))
     
     conn.commit()
     conn.close()

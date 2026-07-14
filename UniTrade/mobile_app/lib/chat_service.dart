@@ -1,9 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'auth_service.dart';
+import 'config.dart';
 
 class ChatService {
-  static const String baseUrl = 'http://192.168.18.68:8000';
+  static String get baseUrl => AppConfig.baseUrl;
 
   static Future<List<dynamic>> getChats() async {
     if (AuthService.token == null) throw Exception("Not logged in");
