@@ -1,11 +1,11 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class AuthService {
   static String? token;
   static Map<String, dynamic>? currentUser;
 
-  static const String baseUrl = 'http://192.168.18.68:8000';
+  static const String baseUrl = 'http://192.168.100.63:8000';
 
   static Future<void> login(String email, String password) async {
     final uri = Uri.parse('$baseUrl/login');

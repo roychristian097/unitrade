@@ -156,7 +156,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
       final token = AuthService.token;
       if (token == null) return;
       final response = await http.get(
-        Uri.parse('http://192.168.18.68:8000/notifications/unread_count'),
+        Uri.parse('http://192.168.100.63:8000/notifications/unread_count'),
         headers: {'Authorization': 'Bearer $token'},
       ).timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
@@ -215,7 +215,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
       if (!_includeAllJabodetabek && _selectedJabodetabekCampus != 'Pilih Kampus') {
         queryParams['campus'] = _selectedJabodetabekCampus;
       }
-      final uri = Uri.http('192.168.18.68:8000', '/products', queryParams);
+      final uri = Uri.http('192.168.100.63:8000', '/products', queryParams);
 
       final response = await http.get(uri).timeout(Duration(seconds: 5));
 
@@ -233,7 +233,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
 
   Future<void> fetchCampuses() async {
     try {
-      final uri = Uri.http('192.168.18.68:8000', '/campuses');
+      final uri = Uri.http('192.168.100.63:8000', '/campuses');
       final response = await http.get(uri).timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
         List jsonResponse = json.decode(response.body);
@@ -279,8 +279,8 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
 
     return Scaffold(
       backgroundColor: context.bgColor,
-      extendBody: true, // Make body extend behind bottom navbar
-      appBar: _buildAppBar(isDesktop),
+      extendBody: true,
+      appBar: isDesktop ? _buildAppBar(isDesktop) : null,
 
       body: RefreshIndicator(
         color: const Color(0xFFE67E22),
@@ -321,33 +321,39 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                     ],
                   ),
                 ),
-              _buildHeaderSection(),
-              SizedBox(height: 24),
-              _buildPromoBanner(),
-              SizedBox(height: 32),
               isDesktop
-                  ? Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                  ? Column(
                       children: [
-                        SizedBox(
-                          width: 280,
-                          child: _buildSidebarFilters(),
-                        ),
-                        SizedBox(width: 32),
-                        Expanded(
-                          child: _buildProductGrid(isDesktop),
+                        _buildHeaderSection(),
+                        SizedBox(height: 24),
+                        _buildPromoBanner(),
+                        SizedBox(height: 32),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SizedBox(width: 280, child: _buildSidebarFilters()),
+                            SizedBox(width: 32),
+                            Expanded(child: _buildProductGrid(isDesktop)),
+                          ],
                         ),
                       ],
                     )
-                  : Column(
-                      children: [
-                        _buildMobileSearchBar(),
-                        SizedBox(height: 16),
-                        _buildQuickCategoryChips(),
-                        SizedBox(height: 24),
-                        _buildProductGrid(isDesktop),
-                        SizedBox(height: 100), // Padding for transparent navbar
-                      ],
+                  : SafeArea(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildMobileSearchBar(),
+                          SizedBox(height: 24),
+                          _buildPromoBanner(),
+                          SizedBox(height: 24),
+                          _buildQuickCategoryChips(),
+                          SizedBox(height: 24),
+                          _buildFlashDeals(),
+                          SizedBox(height: 24),
+                          _buildProductGrid(isDesktop),
+                          SizedBox(height: 100), // Padding for transparent navbar
+                        ],
+                      ),
                     ),
             ],
           ),
@@ -564,32 +570,49 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
 
   Widget _buildPromoBanner() {
     return Container(
+      height: 180,
       width: double.infinity,
-      padding: EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFE67E22), Color(0xFFD35400)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: PageView(
         children: [
-          Text("Back to Campus Sale! 🎓", style: TextStyle(color: context.textColor, fontSize: 18, fontWeight: FontWeight.bold)),
-          SizedBox(height: 8),
-          Text("Get up to 50% off on textbooks and electronics this week.", style: TextStyle(color: context.textColor, fontSize: 13)),
-          SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: () {},
-            style: ElevatedButton.styleFrom(
-              backgroundColor: context.textColor,
-              foregroundColor: const Color(0xFFE67E22),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          Container(
+            padding: EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFFE67E22), Color(0xFFD35400)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(24),
             ),
-            child: Text("Shop Now", style: TextStyle(fontWeight: FontWeight.bold)),
-          )
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text("Back to Campus Sale! 🎓", style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
+                SizedBox(height: 8),
+                Text("Get up to 50% off on textbooks and electronics this week.", style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 13)),
+                SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () {},
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: const Color(0xFFE67E22),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  ),
+                  child: Text("Shop Now", style: TextStyle(fontWeight: FontWeight.bold)),
+                )
+              ],
+            ),
+          ),
+          Container(
+            padding: EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: context.surfaceHighlight,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: context.borderColor),
+            ),
+            child: Center(child: Text("Swipe for more deals!", style: TextStyle(color: context.textColor))),
+          ),
         ],
       ),
     );
@@ -598,66 +621,204 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
   Widget _buildMobileSearchBar() {
     return Row(
       children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: const Color(0xFFD35400),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Image.asset(
+            'assets/images/logo_combined.png',
+            height: 24,
+            fit: BoxFit.contain,
+          ),
+        ),
+        SizedBox(width: 12),
         Expanded(
-          child: TextField(
-            controller: _searchController,
-            onSubmitted: (_) => _applyFilters(),
-            style: TextStyle(color: context.textColor, fontSize: 13),
-            decoration: InputDecoration(
-              hintText: "Search for laptops, books, etc...",
-              hintStyle: TextStyle(color: Colors.grey[600], fontSize: 13),
-              filled: true,
-              fillColor: context.surfaceColor,
-              prefixIcon: Icon(Icons.search, color: Colors.grey, size: 20),
-              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+          child: Container(
+            decoration: BoxDecoration(
+              color: context.surfaceColor,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: Offset(0, 4))
+              ]
+            ),
+            child: TextField(
+              controller: _searchController,
+              onSubmitted: (_) => _applyFilters(),
+              style: TextStyle(color: context.textColor, fontSize: 14),
+              decoration: InputDecoration(
+                hintText: "Search...",
+                hintStyle: TextStyle(color: Colors.grey, fontSize: 14),
+                prefixIcon: Icon(Icons.search, color: Colors.grey, size: 20),
+                suffixIcon: Icon(Icons.camera_alt_outlined, color: Colors.grey, size: 20),
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              ),
             ),
           ),
         ),
         SizedBox(width: 12),
-        InkWell(
-          onTap: _showMobileFilterSheet,
-          child: Container(
-            padding: EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: context.colors.primary,
-              borderRadius: BorderRadius.circular(12),
+        IconButton(
+          icon: Icon(context.isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined, color: context.textColor, size: 24),
+          onPressed: () {
+            themeNotifier.value = context.isDark ? ThemeMode.light : ThemeMode.dark;
+          },
+        ),
+        Stack(
+          children: [
+            Container(
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: context.surfaceColor,
+                shape: BoxShape.circle,
+                border: Border.all(color: context.borderColor),
+              ),
+              child: Icon(Icons.shopping_cart_outlined, color: context.textColor, size: 24),
             ),
-            child: Icon(Icons.tune, color: context.textColor, size: 20),
-          ),
+            if (_unreadNotifCount > 0)
+              Positioned(
+                right: 0,
+                top: 0,
+                child: Container(
+                  padding: EdgeInsets.all(4),
+                  decoration: BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                  child: Text("$_unreadNotifCount", style: TextStyle(color: Colors.white, fontSize: 10)),
+                )
+              )
+          ]
         ),
       ],
     );
   }
 
   Widget _buildQuickCategoryChips() {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      physics: const BouncingScrollPhysics(),
-      child: Row(
-        children: _categories.map((category) {
-          bool isSelected = _selectedCategory == category;
-          return Padding(
-            padding: EdgeInsets.only(right: 8.0),
-            child: ChoiceChip(
-              label: Text(category, style: TextStyle(color: isSelected ? context.textColor : Colors.grey[400], fontSize: 13)),
-              selected: isSelected,
-              selectedColor: const Color(0xFFE67E22),
-              backgroundColor: context.surfaceColor,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-                side: BorderSide(color: isSelected ? const Color(0xFFE67E22) : Colors.transparent),
-              ),
-              onSelected: (bool selected) {
-                setState(() {
-                  _selectedCategory = category;
-                  _applyFilters();
-                });
+    // Add "Lainnya" (More) category for UI purpose
+    final displayCategories = [..._categories, 'Lainnya'];
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text("Categories", style: TextStyle(color: context.textColor, fontSize: 18, fontWeight: FontWeight.bold)),
+        SizedBox(height: 16),
+        Wrap(
+          spacing: 16,
+          runSpacing: 16,
+          alignment: WrapAlignment.spaceEvenly,
+          children: displayCategories.map((category) {
+            IconData iconData;
+            if (category == 'Semua Kategori') iconData = Icons.grid_view;
+            else if (category == 'Elektronik') iconData = Icons.phone_iphone;
+            else if (category == 'Pakaian') iconData = Icons.checkroom;
+            else if (category == 'Otomotif') iconData = Icons.directions_car;
+            else if (category == 'Jasa') iconData = Icons.handyman;
+            else iconData = Icons.more_horiz;
+
+            bool isSelected = _selectedCategory == category;
+
+            return GestureDetector(
+              onTap: () {
+                 if (category == 'Lainnya') {
+                   // Optional: show a modal or dialog with all categories
+                   return;
+                 }
+                 setState(() {
+                   _selectedCategory = category;
+                   _applyFilters();
+                 });
               },
-            ),
-          );
-        }).toList(),
-      ),
+              child: SizedBox(
+                 width: (MediaQuery.of(context).size.width - 48 - 48) / 3,
+                 child: Column(
+                   children: [
+                     Container(
+                       height: 64,
+                       width: 64,
+                       decoration: BoxDecoration(
+                         color: isSelected ? const Color(0xFFE67E22) : context.surfaceColor,
+                         borderRadius: BorderRadius.circular(16),
+                         border: Border.all(color: isSelected ? const Color(0xFFE67E22) : context.borderColor),
+                         boxShadow: [
+                           BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 4, offset: Offset(0, 2))
+                         ]
+                       ),
+                       child: Icon(iconData, color: isSelected ? Colors.white : const Color(0xFFE67E22), size: 28),
+                     ),
+                     SizedBox(height: 8),
+                     Text(category == 'Semua Kategori' ? 'Semua' : category, style: TextStyle(color: context.textColor, fontSize: 12), textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis),
+                   ]
+                 )
+              )
+            );
+          }).toList(),
+        ),
+      ]
+    );
+  }
+
+  Widget _buildFlashDeals() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text("Flash Deals for You", style: TextStyle(color: context.textColor, fontSize: 18, fontWeight: FontWeight.bold)),
+            TextButton(onPressed: (){}, child: Text("See All", style: TextStyle(color: Colors.blue))),
+          ],
+        ),
+        SizedBox(height: 12),
+        SizedBox(
+          height: 180,
+          child: FutureBuilder<List<Product>>(
+            future: _productsFuture,
+            builder: (context, snapshot) {
+              if (!snapshot.hasData || snapshot.data!.isEmpty) return SizedBox();
+              return ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: snapshot.data!.length > 4 ? 4 : snapshot.data!.length,
+                itemBuilder: (context, index) {
+                  final product = snapshot.data![index];
+                  return Container(
+                    width: 140,
+                    margin: EdgeInsets.only(right: 16),
+                    decoration: BoxDecoration(
+                      color: context.surfaceColor,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: context.borderColor),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                            child: Image.network(product.imageUrl, fit: BoxFit.cover, width: double.infinity,
+                               errorBuilder: (context, error, stackTrace) =>
+                                    Container(color: context.surfaceHighlight, child: Center(child: Icon(Icons.image, color: Colors.grey, size: 40))),
+                            ),
+                          ),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.all(8),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(product.name, style: TextStyle(color: context.textColor, fontSize: 12, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+                              SizedBox(height: 4),
+                              Text("Rp ${product.price}", style: TextStyle(color: const Color(0xFFE67E22), fontSize: 12, fontWeight: FontWeight.bold)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
@@ -1057,10 +1218,10 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
           shrinkWrap: true,
           physics: NeverScrollableScrollPhysics(),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: isDesktop ? 3 : 1, // 3 kolom di desktop, 1 di HP
-            crossAxisSpacing: 20,
-            mainAxisSpacing: 20,
-            childAspectRatio: isDesktop ? 0.85 : 1.5,
+            crossAxisCount: isDesktop ? 3 : 2, // 3 kolom di desktop, 2 di HP
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 16,
+            childAspectRatio: isDesktop ? 0.85 : 0.75,
           ),
           itemCount: products.length,
           itemBuilder: (context, index) {
@@ -1144,7 +1305,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                         child: Image.network(
                           product.imageUrl.startsWith('http')
                               ? product.imageUrl
-                              : 'http://192.168.18.68:8000${product.imageUrl}',
+                              : 'http://192.168.100.63:8000${product.imageUrl}',
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) =>
                               Icon(Icons.image_outlined, color: context.colors.border, size: 50),
@@ -1161,11 +1322,20 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                           color: Colors.black.withValues(alpha: 0.6),
                           borderRadius: BorderRadius.circular(4),
                         ),
+                        constraints: BoxConstraints(maxWidth: 120),
                         child: Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(Icons.location_on, color: Color(0xFFE67E22), size: 10),
                             SizedBox(width: 4),
-                            Text(product.campus, style: TextStyle(color: Colors.white, fontSize: 9)),
+                            Flexible(
+                              child: Text(
+                                product.campus.split(' - ').first, 
+                                style: TextStyle(color: Colors.white, fontSize: 9),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -1178,7 +1348,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
             Expanded(
               flex: 5,
               child: Padding(
-                padding: EdgeInsets.all(16.0),
+                padding: EdgeInsets.all(8.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -1204,24 +1374,17 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                       style: TextStyle(color: context.textColor, fontSize: 14, fontWeight: FontWeight.bold),
                     ),
                     Spacer(),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          (() {
-                            String pText = "Rp ${formatCurrency(product.price)}";
-                            if (product.itemType == 'Jasa' && product.advancedDetails['max_price'] != null) {
-                              pText += " - Rp ${formatCurrency(int.tryParse(product.advancedDetails['max_price'].toString()) ?? 0)}";
-                            }
-                            return pText;
-                          })(),
-                          style: TextStyle(color: context.textColor, fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
-                        Text(
-                          "View details ->",
-                          style: TextStyle(color: context.colors.primary, fontSize: 12, fontWeight: FontWeight.w500),
-                        ),
-                      ],
+                    Text(
+                      (() {
+                        String pText = "Rp ${formatCurrency(product.price)}";
+                        if (product.itemType == 'Jasa' && product.advancedDetails['max_price'] != null) {
+                          pText += " - Rp ${formatCurrency(int.tryParse(product.advancedDetails['max_price'].toString()) ?? 0)}";
+                        }
+                        return pText;
+                      })(),
+                      style: TextStyle(color: context.textColor, fontSize: 13, fontWeight: FontWeight.bold),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     )
                   ],
                 ),

@@ -162,7 +162,7 @@ class _CartScreenState extends State<CartScreen> {
                                       : Image.network(
                                           item['image_url'].toString().startsWith('http')
                                               ? item['image_url']
-                                              : 'http://192.168.18.68:8000${item['image_url']}',
+                                              : 'http://192.168.100.63:8000${item['image_url']}',
                                           width: 80,
                                           height: 80,
                                           fit: BoxFit.cover,

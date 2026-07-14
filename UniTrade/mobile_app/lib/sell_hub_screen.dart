@@ -27,7 +27,7 @@ class _SellHubScreenState extends State<SellHubScreen> {
   }
 
   Future<Map<String, List<dynamic>>> _fetchUserListings() async {
-    final uri = Uri.http('192.168.18.68:8000', '/user/listings');
+    final uri = Uri.http('192.168.100.63:8000', '/user/listings');
     final headers = {'Content-Type': 'application/json'};
     if (AuthService.token != null) {
       headers['Authorization'] = 'Bearer ${AuthService.token}';
@@ -313,7 +313,7 @@ class _SellHubScreenState extends State<SellHubScreen> {
                   ? ClipRRect(
                       borderRadius: BorderRadius.circular(8),
                       child: Image.network(
-                        imageUrl.startsWith('http') ? imageUrl : 'http://192.168.18.68:8000$imageUrl',
+                        imageUrl.startsWith('http') ? imageUrl : 'http://192.168.100.63:8000$imageUrl',
                         fit: BoxFit.cover,
                       ),
                     )

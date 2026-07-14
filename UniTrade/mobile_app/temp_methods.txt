@@ -1,0 +1,193 @@
+  Widget _buildMobileBottomBar(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      decoration: BoxDecoration(
+        color: context.surfaceColor,
+        border: Border(top: BorderSide(color: context.borderColor)),
+      ),
+      child: SafeArea(
+        child: Row(
+          children: [
+            Expanded(
+              child: OutlinedButton(
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Proceeding to checkout...")));
+                },
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(color: Colors.blue),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                ),
+                child: Text("Buy Now", style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 16)),
+              ),
+            ),
+            SizedBox(width: 16),
+            Expanded(
+              child: ElevatedButton(
+                onPressed: () async {
+                   try {
+                     await CartService.addToCart(widget.product.id, quantity: 1);
+                     CartScreen.refreshNotifier.value = !CartScreen.refreshNotifier.value;
+                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Berhasil ditambahkan ke keranjang")));
+                   } catch (e) {
+                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Gagal menambahkan: $e")));
+                   }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                ),
+                child: Text("Add to Cart", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMobileLayout(BuildContext context) {
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Custom Floating App Bar & Image
+          Stack(
+            children: [
+              GestureDetector(
+                onTap: () {
+                  if (widget.product.imageUrl.isNotEmpty) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => Scaffold(
+                          backgroundColor: Colors.black,
+                          appBar: AppBar(
+                            backgroundColor: Colors.black,
+                            iconTheme: IconThemeData(color: Colors.white),
+                          ),
+                          body: Center(
+                            child: InteractiveViewer(
+                              child: Image.network(
+                                'http://127.0.0.1:8000${widget.product.imageUrl}',
+                                fit: BoxFit.contain,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+                },
+                child: Container(
+                  height: 400,
+                  width: double.infinity,
+                  color: context.surfaceHighlight,
+                  child: widget.product.imageUrl.isNotEmpty
+                      ? Image.network('http://127.0.0.1:8000${widget.product.imageUrl}', fit: BoxFit.cover,
+                           errorBuilder: (_, __, ___) => Icon(Icons.image, size: 80, color: Colors.grey))
+                      : Icon(Icons.image, size: 80, color: Colors.grey),
+                ),
+              ),
+              SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildFloatingIcon(Icons.arrow_back, () => Navigator.pop(context)),
+                      Row(
+                        children: [
+                          _buildFloatingIcon(_isWishlisted ? Icons.favorite : Icons.favorite_border, _toggleWishlist, color: _isWishlisted ? Colors.red : null),
+                          SizedBox(width: 12),
+                          _buildFloatingIcon(Icons.share, () {}),
+                          SizedBox(width: 12),
+                          _buildFloatingIcon(Icons.shopping_cart_outlined, () {
+                            Navigator.push(context, MaterialPageRoute(builder: (_) => CartScreen()));
+                          }),
+                        ],
+                      )
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          
+          SizedBox(height: 24),
+
+          // Title & Rating
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(widget.product.name, style: TextStyle(color: context.textColor, fontSize: 24, fontWeight: FontWeight.bold)),
+                SizedBox(height: 8),
+                Row(
+                  children: [
+                    Text("By ", style: TextStyle(color: Colors.grey, fontSize: 13)),
+                    Text(widget.product.sellerName, style: TextStyle(color: Colors.blue, fontSize: 13, fontWeight: FontWeight.bold)),
+                    Text("  ·  ", style: TextStyle(color: Colors.grey, fontSize: 13)),
+                    Icon(Icons.star_border, color: Colors.orange, size: 16),
+                    SizedBox(width: 4),
+                    Text("4.9 (2.2k) >", style: TextStyle(color: Colors.grey, fontSize: 13)),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          
+          SizedBox(height: 24),
+          
+          // Price and Quantity
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text("Rp ${formatCurrency(widget.product.price)}", style: TextStyle(color: context.textColor, fontSize: 22, fontWeight: FontWeight.bold)),
+                    SizedBox(width: 8),
+                    Text("Rp ${formatCurrency(widget.product.price + 1000000)}", style: TextStyle(color: Colors.grey, fontSize: 14, decoration: TextDecoration.lineThrough)),
+                  ],
+                ),
+                // Quantity Selector
+                Row(
+                  children: [
+                    Icon(Icons.remove_circle_outline, color: Colors.grey, size: 24),
+                    SizedBox(width: 12),
+                    Text("1", style: TextStyle(color: context.textColor, fontSize: 16, fontWeight: FontWeight.bold)),
+                    SizedBox(width: 12),
+                    Icon(Icons.add_circle_outline, color: Colors.blue, size: 24),
+                  ],
+                )
+              ],
+            ),
+          ),
+          
+          SizedBox(height: 40),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFloatingIcon(IconData icon, VoidCallback onTap, {Color? color}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: context.surfaceColor,
+          shape: BoxShape.circle,
+          boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))],
+        ),
+        child: Icon(icon, color: color ?? context.textColor, size: 20),
+      ),
+    );
+  }
+}

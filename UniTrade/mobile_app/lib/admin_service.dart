@@ -1,9 +1,9 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'auth_service.dart';
 
 class AdminService {
-  static const String baseUrl = 'http://192.168.18.68:8000/admin';
+  static const String baseUrl = 'http://192.168.100.63:8000/admin';
 
   static Future<List<dynamic>> getPendingUsers() async {
     return _get('/users');

@@ -131,7 +131,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
       final token = AuthService.token;
       if (token == null) return;
       final response = await http.get(
-        Uri.parse('http://192.168.18.68:8000/notifications/unread_count'),
+        Uri.parse('http://192.168.100.63:8000/notifications/unread_count'),
         headers: {'Authorization': 'Bearer $token'},
       ).timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
@@ -904,7 +904,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
                         child: Image.network(
                           service.imageUrl.startsWith('http')
                               ? service.imageUrl
-                              : 'http://192.168.18.68:8000${service.imageUrl}',
+                              : 'http://192.168.100.63:8000${service.imageUrl}',
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) =>
                               Icon(Icons.build_circle_outlined, color: context.colors.border, size: 50),
@@ -1009,7 +1009,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
               child: Image.network(
                 service.imageUrl.startsWith('http')
                     ? service.imageUrl
-                    : 'http://192.168.18.68:8000${service.imageUrl}',
+                    : 'http://192.168.100.63:8000${service.imageUrl}',
                 width: double.infinity,
                 height: 200,
                 fit: BoxFit.cover,

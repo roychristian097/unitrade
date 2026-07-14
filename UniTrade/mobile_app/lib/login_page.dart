@@ -104,26 +104,43 @@ class _LoginPageState extends State<LoginPage> {
                     children: [
                       Row(
                         children: [
-                          Image.asset(
-                            'assets/images/logo_combined.png',
-                            height: 28,
-                            fit: BoxFit.contain,
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFD35400),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Image.asset(
+                              'assets/images/logo_combined.png',
+                              height: 24,
+                              fit: BoxFit.contain,
+                            ),
                           ),
                         ],
                       ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.push(context, 
-                            MaterialPageRoute(builder: (context) => const RegisterPage()),
-                          );
-                        },
-                        child: Text(
-                          'Sign Up',
-                          style: TextStyle(
-                            color: context.textColor.withOpacity(0.6), 
-                            fontSize: 14,
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: Icon(context.isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined, color: Colors.grey, size: 20),
+                            onPressed: () {
+                              themeNotifier.value = context.isDark ? ThemeMode.light : ThemeMode.dark;
+                            },
                           ),
-                        ),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.push(context, 
+                                MaterialPageRoute(builder: (context) => const RegisterPage()),
+                              );
+                            },
+                            child: Text(
+                              'Sign Up',
+                              style: TextStyle(
+                                color: context.textColor.withOpacity(0.6), 
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),

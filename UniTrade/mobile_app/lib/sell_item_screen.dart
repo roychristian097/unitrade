@@ -108,8 +108,8 @@ class _SellItemScreenState extends State<SellItemScreen> {
 
       final isEdit = widget.existingProduct != null;
       final uri = isEdit 
-          ? Uri.http('192.168.18.68:8000', '/products/${widget.existingProduct!.id}')
-          : Uri.http('192.168.18.68:8000', '/products');
+          ? Uri.http('192.168.100.63:8000', '/products/${widget.existingProduct!.id}')
+          : Uri.http('192.168.100.63:8000', '/products');
       var request = http.MultipartRequest(isEdit ? 'PUT' : 'POST', uri);
 
       if (AuthService.token != null) {

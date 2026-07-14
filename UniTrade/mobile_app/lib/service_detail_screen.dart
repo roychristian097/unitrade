@@ -94,7 +94,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
             ClipRRect(
               borderRadius: BorderRadius.circular(16),
               child: Image.network(
-                'http://192.168.18.68:8000${widget.service.imageUrl}',
+                'http://192.168.100.63:8000${widget.service.imageUrl}',
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) =>
                     Center(child: Icon(Icons.image_outlined, color: context.colors.border, size: 80)),
@@ -518,7 +518,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
     );
     if (confirm != true) return;
     try {
-      final uri = Uri.http('192.168.18.68:8000', '/services/${widget.service.id}');
+      final uri = Uri.http('192.168.100.63:8000', '/services/${widget.service.id}');
       final response = await http.delete(uri);
       if (response.statusCode == 200) {
         if (mounted) {
