@@ -117,36 +117,39 @@ class _MainHubState extends State<MainHub> {
   }
 
   Widget _buildBottomNavBar() {
-    return Container(
-      padding: const EdgeInsets.only(top: 32, bottom: 12),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Colors.transparent,
-            context.bgColor.withValues(alpha: 0.85),
-            context.bgColor,
-          ],
-          stops: const [0.0, 0.4, 1.0],
-        ),
-      ),
+    return Padding(
+      padding: const EdgeInsets.only(left: 20.0, right: 20.0, bottom: 24.0),
       child: SafeArea(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _buildBottomNavIcon(Icons.storefront, "Home", 0),
-            _buildBottomNavIcon(Icons.add_box_outlined, "Sell", 1),
-            _buildBottomNavIcon(Icons.chat_bubble_outline, "Chat", 2, badgeCount: _unreadChatCount),
-            _buildBottomNavIcon(Icons.shopping_cart_outlined, "Cart", 3),
-            if (AuthService.currentUser != null && AuthService.currentUser!['role'] == 'ADMIN')
-              _buildBottomNavIcon(Icons.admin_panel_settings, "Admin", 4),
-            _buildBottomNavIcon(
-              Icons.person_outline, 
-              "Profile", 
-              AuthService.currentUser != null && AuthService.currentUser!['role'] == 'ADMIN' ? 5 : 4
-            ),
-          ],
+        child: Container(
+          height: 64,
+          padding: const EdgeInsets.symmetric(horizontal: 12.0),
+          decoration: BoxDecoration(
+            color: Colors.black,
+            borderRadius: BorderRadius.circular(32),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.15),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              )
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildBottomNavIcon(Icons.storefront_outlined, "home", 0),
+              _buildBottomNavIcon(Icons.add_box_outlined, "sell", 1),
+              _buildBottomNavIcon(Icons.chat_bubble_outline, "chat", 2, badgeCount: _unreadChatCount),
+              _buildBottomNavIcon(Icons.shopping_cart_outlined, "cart", 3),
+              if (AuthService.currentUser != null && AuthService.currentUser!['role'] == 'ADMIN')
+                _buildBottomNavIcon(Icons.admin_panel_settings_outlined, "admin", 4),
+              _buildBottomNavIcon(
+                Icons.person_outline, 
+                "profile", 
+                AuthService.currentUser != null && AuthService.currentUser!['role'] == 'ADMIN' ? 5 : 4
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -154,7 +157,7 @@ class _MainHubState extends State<MainHub> {
 
   Widget _buildBottomNavIcon(IconData icon, String label, int index, {int badgeCount = 0}) {
     bool isActive = _currentIndex == index;
-    return InkWell(
+    return GestureDetector(
       onTap: () {
         if (index == -1) return;
         if (_currentIndex == index) {
@@ -165,45 +168,72 @@ class _MainHubState extends State<MainHub> {
           });
         }
       },
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Icon(icon, color: isActive ? const Color(0xFFE67E22) : Colors.grey, size: 24),
-              if (badgeCount > 0)
-                Positioned(
-                  right: -6,
-                  top: -6,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(
-                      color: Colors.red,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Text(
-                      badgeCount > 99 ? '99+' : badgeCount.toString(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 8,
-                        fontWeight: FontWeight.bold,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOutQuint,
+        padding: EdgeInsets.symmetric(
+          horizontal: isActive ? 16.0 : 12.0,
+          vertical: 10.0,
+        ),
+        decoration: BoxDecoration(
+          color: isActive ? const Color(0xFFD4F1B4) : Colors.transparent,
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Icon(
+                  icon,
+                  color: isActive ? Colors.black : Colors.white60,
+                  size: 24,
+                ),
+                if (badgeCount > 0)
+                  Positioned(
+                    right: -4,
+                    top: -4,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(
+                        color: Colors.redAccent,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        badgeCount > 99 ? '99+' : badgeCount.toString(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 8,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              color: isActive ? const Color(0xFFE67E22) : Colors.grey,
-              fontSize: 10,
-              fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+              ],
             ),
-          ),
-        ],
+            AnimatedSize(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOutQuint,
+              child: SizedBox(
+                width: isActive ? null : 0,
+                child: Padding(
+                  padding: EdgeInsets.only(left: isActive ? 8.0 : 0.0),
+                  child: Text(
+                    label,
+                    style: const TextStyle(
+                      color: Colors.black,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.clip,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

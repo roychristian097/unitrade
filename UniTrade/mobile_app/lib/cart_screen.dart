@@ -142,10 +142,7 @@ class _CartScreenState extends State<CartScreen> {
       appBar: AppBar(
         backgroundColor: context.surfaceColor,
         elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_rounded, color: context.textColor),
-          onPressed: () => Navigator.pop(context),
-        ),
+        automaticallyImplyLeading: true,
         title: Text(
           'Cart',
           style: TextStyle(color: context.textColor, fontWeight: FontWeight.bold, fontSize: 20),
